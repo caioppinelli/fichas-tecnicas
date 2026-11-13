@@ -1,0 +1,1951 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Fichas Técnicas</title>
+<meta name="theme-color" content="#0b6b5a">
+<meta name="description" content="Fichas técnicas, custo de insumos, receitas e controle de perdas para restaurantes.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Mesa de trabalho: lista de fichas à esquerda, ficha aberta à direita. Tudo editável no próprio lugar. */
+:root {
+  --bg: #eef1ef; --panel: #ffffff; --fg: #1b2421; --muted: #5c6a65; --line: #d5dcd8; --soft: #e6ebe8;
+  --accent: #0b6b5a; --accent-fg: #ffffff; --accent-soft: #d8ece7; --warn: #8a5300; --warn-soft: #fbeccb; --info: #2f5f86; --info-soft: #e0ebf4; --bad: #a32a2a; --bar: #57a595;
+  --display: "Barlow Semi Condensed", "Arial Narrow", "Segoe UI", sans-serif; --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141917; --panel: #1d2421; --fg: #e7ece9; --muted: #9dabA5; --line: #333d39; --soft: #28302d;
+  --accent: #5cc7b1; --accent-fg: #0d1a17; --accent-soft: #1d3a34; --warn: #eeb95b; --warn-soft: #3b2e13; --info: #92bfe0; --info-soft: #1d2f3b; --bad: #ef8f8f; --bar: #3f8f7e; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #141917; --panel: #1d2421; --fg: #e7ece9; --muted: #9dabA5; --line: #333d39; --soft: #28302d;
+  --accent: #5cc7b1; --accent-fg: #0d1a17; --accent-soft: #1d3a34; --warn: #eeb95b; --warn-soft: #3b2e13; --info: #92bfe0; --info-soft: #1d2f3b; --bad: #ef8f8f; --bar: #3f8f7e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.4 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 40px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 14px; }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px 8px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.bar1, .bar2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+h1 { font: 700 24px/1 var(--display); margin: 0; letter-spacing: .01em; }
+.casas { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel); }
+.casas button { border: 0; background: none; padding: 5px 14px; font: 600 15px var(--display); letter-spacing: .03em; color: var(--muted); }
+.casas button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.casa-acoes { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.casa-acoes input { width: 190px; max-width: 100%; }
+.boas { max-width: 620px; margin: 24px auto; }
+.boas .actions input { flex: 1 1 200px; min-width: 0; }
+.grow { flex: 1 1 auto; }
+.status { font-size: 13px; color: var(--muted); }
+.status.err { color: var(--bad); font-weight: 600; }
+.ghost { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 3px 11px; font-size: 13.5px; font-weight: 500; }
+.ghost:hover:not(:disabled) { border-color: var(--accent); }
+.ghost:disabled { opacity: .45; cursor: default; }
+.ghost.danger { color: var(--bad); }
+.ghost.solid { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.tabs { display: flex; gap: 2px; overflow-x: auto; }
+.tab { border: 0; background: none; padding: 5px 12px; border-radius: 6px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.tab[aria-selected="true"] { background: var(--soft); color: var(--fg); }
+.n { font-weight: 500; font-size: 12px; margin-left: 3px; color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 14px; align-items: start; }
+.side { position: sticky; top: 104px; max-height: calc(100vh - 118px); display: flex; flex-direction: column; overflow: hidden; }
+.side-head { padding: 10px; display: grid; gap: 7px; border-bottom: 1px solid var(--line); }
+input[type="text"], input[type="search"], input[type="date"], select, textarea { width: 100%; border: 1px solid var(--line); background: var(--panel); border-radius: 5px; padding: 5px 8px; min-width: 0; }
+textarea { resize: vertical; min-height: 54px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { border: 1px solid var(--line); background: none; border-radius: 99px; font-size: 12.5px; padding: 1px 9px; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--panel); font-weight: 600; }
+.list { overflow-y: auto; flex: 1; padding-bottom: 6px; }
+.group { font: 600 12.5px var(--display); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 10px 12px 3px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; width: 100%; border: 0; background: none; text-align: left; padding: 6px 12px; }
+.row:hover { background: var(--soft); }
+.row[aria-current="true"] { background: var(--accent-soft); }
+.row b { font-weight: 600; overflow-wrap: anywhere; }
+.val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+.flag { color: var(--warn); font-weight: 600; }
+.detail { padding: 16px 18px; display: grid; gap: 13px; }
+.title-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.title-row input { flex: 1 1 240px; font: 700 22px var(--display); border-color: transparent; background: transparent; padding: 2px 6px; margin-left: -6px; }
+.title-row input:hover, .title-row input:focus { border-color: var(--line); background: var(--panel); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; justify-self: start; }
+.seg button { border: 0; background: none; padding: 3px 12px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--panel); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+.kpi { background: var(--soft); border-radius: 6px; padding: 7px 10px; display: grid; gap: 1px; min-width: 0; }
+.kpi label, .kpi span { font-size: 12px; color: var(--muted); }
+.kpi b { font: 700 20px var(--display); font-variant-numeric: tabular-nums; }
+.kpi input, .kpi select { font-weight: 600; padding: 2px 6px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font-size: 12px; color: var(--muted); padding: 5px 6px; border-bottom: 2px solid var(--line); white-space: nowrap; font-weight: 600; }
+th button { all: unset; cursor: pointer; }
+th button:hover { color: var(--fg); }
+th button:focus-visible { outline: 2px solid var(--accent); }
+td { padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td input.num, td input.nb { text-align: right; font-variant-numeric: tabular-nums; }
+td input, td select { border-color: transparent; background: transparent; padding: 3px 5px; }
+td input:hover, td input:focus, td select:hover, td select:focus { border-color: var(--line); background: var(--panel); }
+input:disabled { color: var(--muted); }
+.w-q { width: 94px; min-width: 76px; }
+.w-p { width: 112px; min-width: 88px; }
+.w-n { min-width: 170px; }
+.w-s { min-width: 150px; }
+.w-u { min-width: 104px; }
+.w-d { min-width: 138px; }
+.w-sit { min-width: 118px; }
+.w-sit .link { overflow-wrap: normal; white-space: nowrap; }
+.barw { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 92px; }
+.barw i { display: block; height: 7px; border-radius: 3px; background: var(--bar); }
+tfoot td { font-weight: 700; border-bottom: 0; border-top: 2px solid var(--line); padding-block: 6px; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 0 6px; white-space: nowrap; }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.info { background: var(--info-soft); color: var(--info); }
+.tag.base { background: var(--accent-soft); color: var(--accent); }
+.tag.off { background: var(--soft); color: var(--muted); }
+.link { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; text-align: left; overflow-wrap: anywhere; }
+.link:hover { text-decoration: underline; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.muted { color: var(--muted); font-size: 13.5px; margin: 0; }
+.field { display: grid; gap: 2px; font-size: 12px; color: var(--muted); min-width: 0; }
+.field textarea, .field input, .field select { font-size: 14px; color: var(--fg); }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.form .wide { grid-column: span 2; }
+.pad { padding: 14px; display: grid; gap: 10px; }
+.filters { display: grid; grid-template-columns: minmax(170px, 300px) 1fr auto; gap: 8px; align-items: center; }
+.expand td { background: var(--soft); font-size: 13.5px; padding: 6px 8px; }
+h2 { font: 700 18px var(--display); margin: 8px 0 0; }
+.pad > h2:first-child { margin-top: 0; }
+h3 { font: 600 15px var(--display); margin: 8px 0 0; }
+.note { background: var(--soft); border-radius: 6px; padding: 28px 18px; text-align: center; color: var(--muted); }
+.sub { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+.esp { display: grid; gap: 14px; }
+.duo { display: flex; gap: 4px; }
+.duo input:first-child { flex: 0 0 76px; }
+.passos { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: passo; }
+.passos li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: start; counter-increment: passo; }
+.passos li::before { content: counter(passo); font: 700 18px/30px var(--display); text-align: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); width: 30px; height: 30px; }
+.passos .mv { display: flex; gap: 3px; }
+.passos p { margin: 4px 0 0; max-width: 70ch; white-space: pre-wrap; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13.5px; color: var(--muted); }
+.meta b { color: var(--fg); font-weight: 600; }
+.ler h2 { font-size: 16px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.ler-nome { font: 700 26px/1.1 var(--display); margin: 0; text-wrap: balance; }
+.obs { background: var(--warn-soft); color: var(--fg); border-radius: 6px; padding: 9px 12px; white-space: pre-wrap; max-width: 75ch; margin: 0; }
+.escala { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.escala input { width: 64px; }
+body.leitura :is(.handle, [data-mover], [data-add-item], [data-nova-ficha], [data-novo-ins], [data-rec-nova], [data-rec-add-ing], [data-rec-add-passo], [data-rec-puxar], [data-pede-del], [data-dup], [data-rec-dup], [data-criar-del], [data-rm], [data-rec-rm-ing], [data-rec-rm-passo], [data-esp-mover], #desfazer, [data-rec-modo], .esp > section:first-child) { display: none !important; }
+.mover { background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 12px; }
+.mv-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.mv-head b { font: 600 16px var(--display); }
+.mv-sec { display: grid; gap: 5px; }
+.mv-sec > span { font: 600 12px var(--display); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.conf { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--warn-soft); color: var(--fg); border-radius: 6px; padding: 8px 10px; font-size: 13.5px; }
+.aviso { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; background: var(--accent-soft); color: var(--fg); border-radius: 6px; padding: 8px 12px; margin: 0 0 12px; font-size: 14px; }
+.rowwrap { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+.rowwrap .handle { margin-left: 4px; }
+.handle { border: 0; background: none; color: var(--muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; padding: 4px 3px; font-size: 15px; line-height: 1; border-radius: 4px; }
+.handle:hover { color: var(--fg); background: var(--soft); }
+td.hcol, th.hcol { width: 1%; padding-inline: 2px; }
+.dragging { position: relative; z-index: 3; background: var(--panel); box-shadow: 0 6px 18px rgb(0 0 0 / .2); }
+tr.dragging > td { background: var(--panel); }
+.drop-before:not(tr), .drop-before > td { box-shadow: inset 0 3px 0 var(--accent); }
+.drop-after:not(tr), .drop-after > td { box-shadow: inset 0 -3px 0 var(--accent); }
+body.arrastando, body.arrastando * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+.perdas { display: grid; gap: 14px; }
+#pd-texto { min-height: 96px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
+.barras { display: grid; gap: 7px; }
+.barras .b { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 13.5px; }
+.barras .b i { grid-column: 1 / -1; display: block; height: 7px; border-radius: 4px; background: var(--bad); opacity: .7; }
+body.leitura :is(.pd-novo, [data-pd-del], [data-pede-del^="pd:"]) { display: none !important; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; max-height: 44vh; }
+  header.top { position: static; }
+  .filters { grid-template-columns: minmax(0, 1fr); }
+  .col-bar { display: none; }
+  .detail { padding: 13px; }
+  .form .wide { grid-column: auto; }
+}
+@media (prefers-reduced-motion: no-preference) { .ghost, .tab, .row { transition: background-color .1s; } }
+
+/* ---------- Entrada, conta e equipe ---------- */
+.conta { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.conta:empty { display: none; }
+.entrada { min-height: 100vh; display: grid; place-items: start center; padding-block: 8vh 40px; }
+.ent-caixa { width: 100%; max-width: 440px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 14px; }
+.ent-marca { display: flex; gap: 12px; align-items: center; }
+.ent-marca b { display: block; font: 700 22px/1.1 var(--display); }
+.ent-marca div span { color: var(--muted); font-size: 13px; }
+.ent-logo { flex: none; width: 44px; height: 44px; border-radius: 10px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font: 700 19px var(--display); letter-spacing: .02em; }
+.ent-form { display: grid; gap: 10px; }
+.ent-form input, .eq-caixa input { width: 100%; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 8px 10px; font-size: 15px; color: var(--fg); min-width: 0; }
+.ent-form > button { padding: 8px 14px; font-size: 15px; font-weight: 600; justify-self: start; }
+.ent-linha { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+.ent-linha .field { flex: 1 1 200px; }
+.ent-linha > button { padding: 7px 14px; }
+.ent-alt { margin: 0; font-size: 13.5px; color: var(--muted); }
+.ent-msg { margin: 0; padding: 9px 11px; border-radius: 6px; background: var(--warn-soft); color: var(--fg); font-size: 14px; }
+.ent-lista { display: grid; gap: 6px; }
+.ent-rest { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 11px 13px; }
+.ent-rest:hover { border-color: var(--accent); }
+.ent-rest b { font: 600 17px var(--display); }
+.ent-rest span { color: var(--muted); font-size: 13px; }
+.equipe { position: fixed; inset: 0; z-index: 30; background: color-mix(in srgb, var(--fg) 35%, transparent); display: grid; place-items: start center; overflow-y: auto; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+.eq-caixa { width: 100%; max-width: 680px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; }
+.eq-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.eq-topo h2 { margin: 0; }
+.eq-convite { display: grid; gap: 8px; background: var(--soft); border-radius: 8px; padding: 12px; }
+.eq-convite p { margin: 0; }
+.eq-cod { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.eq-cod span { width: 72px; color: var(--muted); font-size: 13px; }
+.eq-cod code { font: 600 16px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; word-break: break-all; }
+.eq-caixa select { width: auto; }
+</style>
+
+<div id="entrada" class="entrada" hidden></div>
+<div id="equipe" class="equipe" hidden></div>
+<div class="wrap" hidden>
+  <header class="top">
+    <div class="bar1">
+      <h1>Fichas técnicas</h1>
+      <div class="casas" id="casas"></div>
+      <div class="casa-acoes" id="casa-acoes"></div>
+      <span class="grow"></span>
+      <span class="status" id="status" role="status" aria-live="polite">Abrindo…</span>
+      <button class="ghost" id="desfazer" disabled>Desfazer</button>
+      <span class="conta" id="conta"></span>
+    </div>
+    <nav class="tabs bar2" id="tabs" role="tablist" aria-label="Seções"></nav>
+  </header>
+  <main id="view"><div class="note">Abrindo suas fichas…</div></main>
+</div>
+<datalist id="dl-insumos"></datalist>
+<datalist id="dl-fichas"></datalist>
+<datalist id="dl-grupos"></datalist>
+<datalist id="dl-unidades"></datalist>
+<datalist id="dl-reccat"></datalist>
+<datalist id="dl-unrec"></datalist>
+
+<script>
+const CATS = ['Itens de venda', 'Especiais', 'Porções', 'Extras', 'Preparos base'];
+const TIPOS_ESP = ['Lanche', 'Pizza'];
+const UN = { Gramas: 'g', Litros: 'L', Unidade: 'un', Quilos: 'kg', Mililitros: 'ml', ML: 'ml' };
+const TIPOS = {
+  'Sem preço': 'Insumo cadastrado sem preço. O custo dele não entra na ficha.',
+  'Sem quantidade': 'O ingrediente está na ficha, mas sem quantidade, então custa R$ 0,00.',
+  'Sem ingrediente': 'A linha tem quantidade, mas o nome do ingrediente está vazio.',
+  'Fora do cadastro': 'O nome não existe na aba Insumos, então o custo não entra na ficha.',
+  'Custo zero': 'Tem quantidade, mas o custo calculado é R$ 0,00.',
+  'Sem margem': 'Item de venda sem margem, por isso fica sem preço sugerido.',
+  'Insumo sem preço': 'Sem preço na aba Insumos: toda ficha que usa esse insumo fica sem o custo dele.',
+  'Insumo sem uso': 'Está cadastrado, mas não aparece em nenhuma ficha.'
+};
+const INFO = new Set(['Insumo sem uso']);
+const CATS_DEL = ['Itens de venda', 'Porções'];
+const temCompar = f => !!f && CATS_DEL.includes(f.categoria);
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s ?? '').trim().toLowerCase();
+const semAcento = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
+const nf = (a, b) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: a, maximumFractionDigits: b ?? a });
+const brl = v => v == null ? '—' : 'R$ ' + nf(2).format(v);
+const brlU = v => v == null ? '—' : 'R$ ' + (Math.abs(v) < 1 ? nf(4) : nf(2)).format(v);
+const numTxt = v => v == null ? '' : nf(0, 6).format(v).replace(/\./g, '');
+const pctTxt = v => v == null ? '' : nf(0, 2).format(v * 100);
+function parseNum(txt) {
+  let t = String(txt).replace(/\s|R\$|%/g, '');
+  if (t === '') return null;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  const n = Number(t);
+  return Number.isFinite(n) ? n : NaN;
+}
+const hoje = () => new Date().toLocaleDateString('sv');
+const STATUS_ORD = ['No cardápio', 'Programado', 'Sem data', 'Encerrado'];
+function statusEsp(f) {
+  const h = hoje();
+  if (!f.inicio && !f.fim) return ['Sem data', 'info'];
+  if (f.fim && f.fim < h) return ['Encerrado', 'off'];
+  if (f.inicio && f.inicio > h) return ['Programado', 'info'];
+  return ['No cardápio', 'base'];
+}
+
+const S = { casas: {}, casa: null, view: 'fichas', ficha: null, canal: 'salao', busca: '', cat: 'Todas', ordem: 'planilha', hist: [], insBusca: '', insGrupo: 'Todos', insOrd: ['_', 1], insAberto: null, confirmar: null, undo: {}, carregou: false,
+  espForm: { tipo: 'Lanche', nome: '', preco: '', inicio: '', fim: '', base: '', desc: '' }, espTipo: 'Todos', espSit: 'Todos',
+  mover: false, moverConf: null, aviso: null,
+  receitas: {}, rec: null, recBusca: '', recCat: 'Todas', recModo: 'ler', recEscala: 1,
+  perdas: {}, pd: { periodo: 'mes', texto: '', previa: [], setor: 'Todos' }, modoPerdas: false };
+const UN_REC = ['g', 'kg', 'ml', 'L', 'un', 'colher de sopa', 'colher de chá', 'xícara', 'pitada', 'a gosto'];
+const fq = v => v == null ? '' : nf(0, 2).format(v);
+const novoId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const recOrdenadas = () => Object.entries(S.receitas).sort(([, a], [, b]) => (a.categoria || 'zzz').localeCompare(b.categoria || 'zzz', 'pt-BR') || (a.ordem ?? 1e9) - (b.ordem ?? 1e9) || a.nome.localeCompare(b.nome, 'pt-BR'));
+const alca = (kind, key, label) => `<button type="button" class="handle" id="h-${kind}-${esc(key)}" data-hk="${esc(key)}" aria-label="Mover ${esc(label || 'item')}" title="Arraste para reordenar (ou use as setas do teclado)">⠿</button>`;
+const $ = id => document.getElementById(id);
+const casa = () => S.casas[S.casa];
+
+/* ---------- Cálculo: mesma regra da planilha ---------- */
+function calcular(c) {
+  const ins = new Map(), fic = new Map();
+  for (const i of c.insumos) if (!ins.has(norm(i.nome))) ins.set(norm(i.nome), i);
+  for (const f of c.fichas) if (!fic.has(norm(f.nome))) fic.set(norm(f.nome), f);
+  const memoU = new Map(), memoT = new Map(), pilha = new Set();
+  function total(f, canal) {
+    const k = canal + '|' + norm(f.nome);
+    if (memoT.has(k)) return memoT.get(k);
+    let t = 0;
+    for (const it of f[canal] || []) { const u = unit(it.nome); if (it.qtde != null && u != null) t += it.qtde * u; }
+    memoT.set(k, t);
+    return t;
+  }
+  function preco(i) {
+    if (i.origem) { const f = fic.get(norm(i.origem)); return f ? total(f, 'salao') : null; }
+    return i.preco;
+  }
+  function unit(nome) {
+    const k = norm(nome);
+    if (memoU.has(k)) return memoU.get(k);
+    const i = ins.get(k);
+    if (!i || pilha.has(k)) return null;
+    pilha.add(k);
+    const p = preco(i);
+    pilha.delete(k);
+    const div = (i.embalagem ?? 0) * (1 - (i.fator ?? 0));
+    const u = p == null || !div ? null : p / div;
+    memoU.set(k, u);
+    return u;
+  }
+  function situacao(it) {
+    if (!norm(it.nome)) return 'Sem ingrediente';
+    if (!ins.has(norm(it.nome))) return 'Fora do cadastro';
+    if (it.qtde == null) return 'Sem quantidade';
+    const u = unit(it.nome);
+    if (u == null) return 'Sem preço';
+    return it.qtde * u === 0 ? 'Custo zero' : '';
+  }
+  const custo = it => { const u = unit(it.nome); return it.qtde == null || u == null ? 0 : it.qtde * u; };
+  const usos = new Map();
+  for (const f of c.fichas) for (const can of ['salao', 'delivery']) for (const it of f[can] || []) {
+    const k = norm(it.nome); if (!k) continue;
+    if (!usos.has(k)) usos.set(k, new Set());
+    usos.get(k).add(f.nome);
+  }
+  return { ins, fic, total, preco, unit, situacao, custo, usos };
+}
+function alertas(c, C) {
+  const out = [];
+  const nivel = (tipo, item) => INFO.has(tipo) || /^agua/.test(semAcento(item)) ? 'info' : 'revisar';
+  for (const f of c.fichas) {
+    for (const canal of temCompar(f) ? ['salao', 'delivery'] : ['salao']) for (const it of f[canal] || []) {
+      const s = C.situacao(it);
+      if (s) out.push({ tipo: s, ficha: f.nome, item: it.nome || (numTxt(it.qtde) + ' sem nome'), canal, nivel: nivel(s, it.nome) });
+    }
+    if (f.categoria !== 'Preparos base' && f.margem == null && !(f.categoria === 'Especiais' && f.preco != null)) out.push({ tipo: 'Sem margem', ficha: f.nome, item: '', canal: 'salao', nivel: 'revisar' });
+  }
+  for (const i of c.insumos) {
+    if (!i.origem && (i.preco == null || i.preco === 0)) out.push({ tipo: 'Insumo sem preço', ficha: null, item: i.nome, canal: null, nivel: nivel('Insumo sem preço', i.nome) });
+    if (!i.origem && !C.usos.has(norm(i.nome))) out.push({ tipo: 'Insumo sem uso', ficha: null, item: i.nome, canal: null, nivel: 'info' });
+  }
+  return out;
+}
+
+/* ---------- Salvar ---------- */
+const canon = v => Array.isArray(v) ? '[' + v.map(canon).join(',') + ']' : v && typeof v === 'object' ? '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}' : JSON.stringify(v ?? null);
+const saver = {};
+let db = null;
+function estado(txt, erro) { const e = $('status'); e.textContent = txt; e.classList.toggle('err', !!erro); }
+function agendarSalvar(id) {
+  const s = saver[id] || (saver[id] = {});
+  s.sujo = true; estado('Salvando…');
+  clearTimeout(s.t);
+  s.t = setTimeout(() => gravar(id), 700);
+}
+async function gravar(id) {
+  const s = saver[id];
+  if (s.rodando) return;
+  s.rodando = true;
+  while (s.sujo) {
+    s.sujo = false;
+    const [col, chave] = id.split('/');
+    const atual = col === 'casas' ? S.casas[chave] : col === 'perdas' ? S.perdas[chave] : S.receitas[chave];
+    try {
+      if (atual === undefined) { await db.doc(id).delete(); s.ultimo = null; continue; }
+      const corpo = JSON.parse(JSON.stringify(atual));
+      if (JSON.stringify(corpo).length > 255000) { estado((col === 'casas' ? 'As fichas da casa ' + (atual.nome || chave) : 'A receita ' + atual.nome) + ' passaram do tamanho máximo de 256 KB. Remova alguma coisa para voltar a salvar.', true); s.rodando = false; return; }
+      await db.doc(id).set(corpo);
+      s.ultimo = canon(corpo);
+    } catch (e) {
+      if (e && e.code === 'unavailable') { await new Promise(r => setTimeout(r, 800 + Math.random() * 800)); s.sujo = true; if (s.tentou) { s.tentou = false; s.sujo = false; estado('Sem conexão: a última alteração não foi salva. Faça outra edição para tentar de novo.', true); s.rodando = false; return; } s.tentou = true; continue; }
+      estado('Não consegui salvar (' + (e && e.code || 'erro') + '). A alteração continua na tela; recarregar a página vai descartá-la.', true);
+      s.rodando = false; return;
+    }
+    s.tentou = false;
+  }
+  s.rodando = false;
+  if (!Object.values(saver).some(x => x.sujo || x.rodando)) estado('Tudo salvo');
+}
+function mudar(fn, id = S.casa) {
+  if (S.soLeitura) { estado('Somente visualização: só quem tem acesso de editor pode alterar.', true); return; }
+  const pilha = S.undo[id] || (S.undo[id] = []);
+  const antes = JSON.stringify(S.casas[id]), fichaAntes = S.ficha;
+  if (fn(S.casas[id]) === false) { depois(); return; }
+  if (JSON.stringify(S.casas[id]) === antes) { depois(); return; }
+  ajustarRendimentos(JSON.parse(antes), S.casas[id]);
+  pilha.push({ corpo: antes, ficha: fichaAntes }); if (pilha.length > 40) pilha.shift();
+  agendarSalvar('casas/' + id);
+  fichaParaRecs(id);
+  depois();
+}
+function mudarRecs(ids, fn, carimbo) {
+  if (S.soLeitura) { estado('Somente visualização: só quem tem acesso de editor pode alterar.', true); return; }
+  const pilha = S.undo.rec || (S.undo.rec = []);
+  const json = id => S.receitas[id] === undefined ? null : JSON.stringify(S.receitas[id]);
+  const antes = ids.map(id => [id, json(id)]);
+  if (fn() === false) { depois(); return; }
+  const mud = antes.filter(([id, a]) => json(id) !== a);
+  if (!mud.length) { depois(); return; }
+  if (carimbo) for (const [id] of mud) if (S.receitas[id]) S.receitas[id].atualizado = hoje();
+  pilha.push({ itens: mud.map(([id, corpo]) => ({ id, corpo })), rec: S.rec }); if (pilha.length > 40) pilha.shift();
+  for (const [id] of mud) agendarSalvar('receitas/' + id);
+  for (const [id, a] of mud) {
+    const r = S.receitas[id]; if (!r || !r.ficha) continue;
+    const velho = a ? JSON.parse(a) : {};
+    if (velho.ficha !== r.ficha || (velho.casa || null) !== (r.casa || null)) fichaParaRecs(casaDaReceita(r));
+    else recParaFicha(id);
+  }
+  depois();
+}
+const mudarRec = (id, fn) => mudarRecs([id], () => fn(S.receitas[id]), true);
+function depois() {
+  setTimeout(() => {
+    const foco = document.activeElement && document.activeElement.id;
+    render();
+    if (foco && foco !== 'desfazer') { const el = $(foco); if (el) { el.focus(); if (el.select && el.tagName === 'INPUT' && el.type !== 'date') el.select(); } }
+  }, 0);
+}
+function avisar(msg) { estado(msg, true); depois(); }
+
+/* ---------- Casas (criar, renomear, excluir) ---------- */
+function acoesCasa() {
+  if (S.soLeitura || !Object.keys(S.casas).length) return '';
+  const c = casa();
+  if (S.casaForm === 'nova') return `<input type="text" id="casa-nome" placeholder="Nome da nova casa" aria-label="Nome da nova casa" maxlength="40"><button class="ghost solid" data-casa-criar>Criar</button><button class="ghost" data-casa-cancel>Cancelar</button>`;
+  if (S.casaForm === 'editar' && c) return `<input type="text" id="casa-renome" value="${esc(c.nome)}" aria-label="Nome da casa" maxlength="40"><button class="ghost solid" data-casa-renomear>Salvar nome</button>` +
+    (S.casaExcluir ? `<button class="ghost danger" data-casa-excluir>Apagar ${esc(c.nome)} e todas as fichas dela</button>` : `<button class="ghost" data-casa-excluir>Excluir casa</button>`) + `<button class="ghost" data-casa-cancel>Cancelar</button>`;
+  return `<button class="ghost" data-casa-nova>+ Casa</button>${c && !S.modoPerdas ? '<button class="ghost" data-casa-editar>Editar casa</button>' : ''}`;
+}
+function boasVindas() {
+  return `<div class="panel pad boas"><h2>Comece pela sua primeira casa</h2>
+  <p class="muted">Uma casa é cada operação que tem cardápio e insumos próprios: uma hamburgueria, uma pizzaria, o bar. Depois de criar, cadastre os insumos com preço e embalagem e monte as fichas técnicas; o custo de cada item sai sozinho.</p>
+  <div class="actions"><input type="text" id="casa-nome" placeholder="Ex.: Hamburgueria" aria-label="Nome da casa" maxlength="40"><button class="ghost solid" data-casa-criar>Criar casa</button></div></div>`;
+}
+function criarCasa() {
+  const el = $('casa-nome'); const nome = (el && el.value || '').trim();
+  if (!nome) { if (el) el.focus(); estado('Escreva o nome da casa.', true); return; }
+  if (Object.values(S.casas).some(x => norm(x.nome) === norm(nome))) { estado('Já existe uma casa com esse nome.', true); return; }
+  let base = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'CASA', id = base, k = 2;
+  while (S.casas[id]) id = base + '-' + k++;
+  const ordem = Object.values(S.casas).reduce((m, x) => Math.max(m, x.ordem ?? 0), 0) + 1;
+  S.casas[id] = { nome, ordem, insumos: [], fichas: [], operacional: null };
+  S.casa = id; S.ficha = null; S.view = 'insumos'; S.modoPerdas = false; S.casaForm = null; S.casaExcluir = false; S.vazioPronto = false; S.carregou = true; S.hist = [];
+  agendarSalvar('casas/' + id); render();
+}
+function excluirCasa() {
+  const id = S.casa; if (!id) return;
+  delete S.casas[id]; delete S.undo[id]; agendarSalvar('casas/' + id);
+  const ids = Object.keys(S.casas).sort((a, b) => (S.casas[a].ordem ?? 9) - (S.casas[b].ordem ?? 9));
+  S.casa = ids[0] || null; S.ficha = S.casa && casa().fichas[0] ? casa().fichas[0].nome : null; S.casaForm = null; S.casaExcluir = false; S.view = 'fichas';
+  if (!S.casa) S.vazioPronto = true;
+  render();
+}
+
+/* ---------- Telas ---------- */
+function renderHeader(A) {
+  const ids = Object.keys(S.casas).sort((a, b) => (S.casas[a].ordem ?? 9) - (S.casas[b].ordem ?? 9));
+  $('casas').innerHTML = ids.map(i => `<button data-casa="${esc(i)}" aria-pressed="${!S.modoPerdas && i === S.casa}">${esc(S.casas[i].nome)}</button>`).join('') + (ids.length ? `<button data-perdas-geral aria-pressed="${!!S.modoPerdas}">ERROS E PERDAS</button>` : '');
+  $('casa-acoes').innerHTML = acoesCasa();
+  $('tabs').hidden = !!S.modoPerdas || !casa(); $('desfazer').hidden = !!S.modoPerdas || !casa();
+  const c = casa();
+  const temDel = c && c.fichas.some(f => f.delivery && temCompar(f));
+  const rev = A ? A.filter(a => a.nivel === 'revisar').length : 0;
+  const tabs = [['fichas', 'Fichas', c ? c.fichas.length : 0], ['multiplicar', 'Multiplicar', null], ['especiais', 'Especiais', c ? c.fichas.filter(f => f.categoria === 'Especiais').length : 0], ['receitas', 'Receitas', Object.keys(S.receitas).length], ['insumos', 'Insumos', c ? c.insumos.length : 0]];
+  if (temDel) tabs.push(['delivery', 'Salão × Delivery', null]);
+  tabs.push(['alertas', 'A revisar', rev]);
+  $('tabs').innerHTML = tabs.map(([v, n, q]) => `<button class="tab" role="tab" aria-selected="${S.view === v}" data-view="${v}">${n}${q != null ? `<span class="n">${q}</span>` : ''}</button>`).join('');
+  $('desfazer').disabled = !(S.undo[S.view === 'receitas' ? 'rec' : S.casa] || []).length;
+}
+function linhasLista(c, C) {
+  const q = semAcento(S.busca);
+  let l = c.fichas.filter(f => (S.cat === 'Todas' || f.categoria === S.cat) && (!q || semAcento(f.nome).includes(q) || (f.salao || []).concat(f.delivery || []).some(i => semAcento(i.nome).includes(q))));
+  if (S.ordem === 'nome') l = [...l].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  if (S.ordem === 'custo') l = [...l].sort((a, b) => C.total(b, 'salao') - C.total(a, 'salao'));
+  const cats = [...CATS, ...new Set(l.map(f => f.categoria).filter(x => !CATS.includes(x)))];
+  const html = cats.filter(k => l.some(f => f.categoria === k)).map(k => {
+    const g = l.filter(f => f.categoria === k);
+    const manual = S.ordem === 'planilha';
+    return `<div class="group">${esc(k)} (${g.length})</div><div data-dnd="ficha">` + g.map(f => {
+      const n = (f.salao || []).concat(f.delivery || []).filter(i => C.situacao(i)).length;
+      const achou = q && !semAcento(f.nome).includes(q) ? (f.salao || []).concat(f.delivery || []).find(i => semAcento(i.nome).includes(q)) : null;
+      const it = (f.salao || []).length;
+      const row = `<button class="row" data-ficha="${esc(f.nome)}" aria-current="${f.nome === S.ficha}"><b>${esc(f.nome)}</b><span class="val">${brl(C.total(f, 'salao'))}</span><small>${f.categoria === 'Especiais' && f.tipo ? esc(f.tipo) + ' · ' : ''}${it} ${it === 1 ? 'item' : 'itens'}${achou ? ' · contém ' + esc(achou.nome) : ''}${n ? ` · <span class="flag">${n} a revisar</span>` : ''}</small></button>`;
+      return manual ? `<div class="rowwrap" data-dnd-item data-key="${esc(f.nome)}">${alca('ficha', f.nome, f.nome)}${row}</div>` : row;
+    }).join('') + '</div>';
+  }).join('');
+  return html || '<div class="note" style="margin:10px">Nenhuma ficha encontrada.</div>';
+}
+function blocoEspecial(f, tot) {
+  const cmv = f.preco ? tot / f.preco : null;
+  const [st, cl] = statusEsp(f);
+  return `<div class="kpis">
+      <div class="kpi"><label for="f-tipo">Tipo de especial</label><select id="f-tipo" data-a="f-tipo"><option value=""${!f.tipo ? ' selected' : ''}>—</option>${TIPOS_ESP.map(t => `<option${f.tipo === t ? ' selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="kpi"><label for="f-preco">Preço de venda (R$)</label><input type="text" inputmode="decimal" id="f-preco" data-a="f-preco" value="${esc(f.preco == null ? '' : nf(2).format(f.preco))}" placeholder="sem preço"></div>
+      <div class="kpi"><span>CMV</span><b>${cmv == null ? '—' : nf(1).format(cmv * 100) + '%'}</b></div>
+      <div class="kpi"><label for="f-ini">No cardápio de</label><input type="date" id="f-ini" data-a="f-ini" value="${esc(f.inicio || '')}"></div>
+      <div class="kpi"><label for="f-fim">até</label><input type="date" id="f-fim" data-a="f-fim" value="${esc(f.fim || '')}"></div>
+    </div>
+    <div class="actions"><span class="tag ${cl}">${st}</span><button class="link" data-view="especiais">Ver todos os especiais</button></div>
+    <label class="field">Descrição para o cardápio<textarea id="f-desc" data-a="f-desc" rows="2">${esc(f.descricao)}</textarea></label>`;
+}
+function confLinha(acao, alvo, texto) {
+  return S.moverConf === acao + '|' + alvo ? `<div class="conf">${texto}<button class="ghost solid" data-mv="${acao}" data-alvo="${esc(alvo)}">Sim, mover</button><button class="ghost" data-mv-cancel>Cancelar</button></div>` : '';
+}
+function painelMoverFicha(c, f) {
+  const outras = Object.keys(S.casas).filter(id => id !== S.casa);
+  const gerado = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
+  return `<div class="mover" role="region" aria-label="Mover ficha">
+    <div class="mv-head"><b>Mover “${esc(f.nome)}” para…</b><button class="ghost" data-mover-fechar>Fechar</button></div>
+    <div class="mv-sec"><span>Outra categoria nesta casa</span><div class="actions">${CATS.filter(k => k !== f.categoria).map(k => `<button class="ghost" data-mv="cat" data-alvo="${esc(k)}">${esc(k)}${k === 'Especiais' ? ' (aba Especiais)' : ''}</button>`).join('')}</div></div>
+    <div class="mv-sec"><span>Aba Receitas</span><div class="actions"><button class="ghost" data-mv="rec-copiar" data-alvo="-">Criar receita e manter a ficha</button><button class="ghost" data-mv="rec-mover" data-alvo="-">Mover para Receitas</button></div>
+      <p class="muted">Mantendo a ficha, a receita fica ligada a ela e mostra o custo. Movendo, a ficha sai daqui e a receita fica sem custo.</p>
+      ${confLinha('rec-mover', '-', `A ficha sai de ${esc(c.nome)} e vira uma receita.`)}</div>
+    ${outras.length ? `<div class="mv-sec"><span>Outra casa</span><div class="actions">${outras.map(id => `<button class="ghost" data-mv="casa-mover" data-alvo="${esc(id)}">Mover para ${esc(S.casas[id].nome)}</button><button class="ghost" data-mv="casa-copiar" data-alvo="${esc(id)}">Copiar para ${esc(S.casas[id].nome)}</button>`).join('')}</div>
+      <p class="muted">Os insumos que faltarem na outra casa vão junto, com o mesmo preço.${gerado ? ` Esta receita gera o insumo ${esc(gerado.nome)}; movendo, ele fica aqui com o custo atual fixo.` : ''}</p>
+      ${outras.map(id => confLinha('casa-mover', id, `A ficha sai de ${esc(c.nome)} e vai para ${esc(S.casas[id].nome)}.`)).join('')}</div>` : ''}
+  </div>`;
+}
+function painelMoverReceita(r) {
+  const cats = [...new Set(['Molhos', 'Pães e massas', 'Carnes', 'Coberturas', 'Sobremesas', ...Object.values(S.receitas).map(x => x.categoria).filter(Boolean)])].filter(k => k !== r.categoria);
+  const ids = Object.keys(S.casas).sort((a, b) => (S.casas[a].ordem ?? 9) - (S.casas[b].ordem ?? 9));
+  return `<div class="mover" role="region" aria-label="Mover receita">
+    <div class="mv-head"><b>Mover “${esc(r.nome)}” para…</b><button class="ghost" data-mover-fechar>Fechar</button></div>
+    <div class="mv-sec"><span>Outra categoria de receitas</span><div class="actions">${cats.map(k => `<button class="ghost" data-mv="rcat" data-alvo="${esc(k)}">${esc(k)}</button>`).join('')}</div></div>
+    <div class="mv-sec"><span>Aba Fichas (entra em Preparos base)</span><div class="actions">${ids.map(id => `<button class="ghost" data-mv="fic-mover" data-alvo="${esc(id)}">Mover para ${esc(S.casas[id].nome)}</button><button class="ghost" data-mv="fic-copiar" data-alvo="${esc(id)}">Copiar para ${esc(S.casas[id].nome)}</button>`).join('')}</div>
+      <p class="muted">Confira as unidades depois: na ficha, a quantidade usa a unidade cadastrada em Insumos.</p>
+      ${ids.map(id => confLinha('fic-mover', id, `A receita sai da aba Receitas e vira ficha em ${esc(S.casas[id].nome)}.`)).join('')}</div>
+  </div>`;
+}
+function renderDetalhe(c, C) {
+  const f = c.fichas.find(x => x.nome === S.ficha);
+  if (!f) return '<div class="detail"><div class="note">Escolha uma ficha na lista ou crie uma nova.</div></div>';
+  const comp = temCompar(f);
+  const canal = S.canal === 'delivery' && f.delivery && comp ? 'delivery' : 'salao';
+  const itens = f[canal] || [];
+  const tot = C.total(f, canal);
+  const max = Math.max(...itens.map(C.custo), 0.0001);
+  const gerado = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
+  const usadoEm = gerado ? [...(C.usos.get(norm(gerado.nome)) || [])] : [];
+  const temDelCasa = c.fichas.some(x => x.delivery);
+  const outro = canal === 'delivery' ? f.salao : f.delivery;
+  const nomesOutro = new Map((outro || []).map(i => [norm(i.nome), i]));
+  const linhas = itens.map((it, k) => {
+    const s = C.situacao(it);
+    const alvo = norm(it.nome) && C.ins.get(norm(it.nome));
+    const abre = alvo && alvo.origem && C.fic.get(norm(alvo.origem));
+    const un = alvo ? (UN[alvo.unidade] || alvo.unidade || '') : '';
+    const cu = C.custo(it);
+    const dif = canal === 'delivery' ? (nomesOutro.has(norm(it.nome)) ? (nomesOutro.get(norm(it.nome)).qtde !== it.qtde ? `<span class="tag info">no salão: ${esc(numTxt(nomesOutro.get(norm(it.nome)).qtde) || '—')}</span>` : '') : '<span class="tag info">só no delivery</span>') : '';
+    return `<tr data-dnd-item data-key="${k}">
+      <td class="hcol">${alca('item', k, it.nome)}</td>
+      <td class="w-n"><input type="text" id="it-${canal}-${k}-n" list="dl-insumos" aria-label="Ingrediente" data-a="it-nome" data-k="${k}" value="${esc(it.nome)}"></td>
+      <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="it-${canal}-${k}-q" aria-label="Quantidade" data-a="it-qtde" data-k="${k}" value="${esc(numTxt(it.qtde))}"></td>
+      <td>${esc(un)}</td>
+      <td class="num">${brl(cu)}</td>
+      <td class="col-bar"><div class="barw"><i style="width:${Math.round(cu / max * 60)}px"></i>${tot ? nf(0, 1).format(cu / tot * 100) : '0'}%</div></td>
+      <td class="w-sit">${abre ? `<button class="link" data-abrir="${esc(abre.nome)}">abrir preparo</button> ` : ''}${s ? `<span class="tag warn">${esc(s)}</span> ` : ''}${dif}</td>
+      <td><button class="ghost" aria-label="Remover ${esc(it.nome || 'linha')}" data-rm="${k}">×</button></td></tr>`;
+  }).join('');
+  const sug = canal === 'salao' && f.margem != null && f.margem < 1 ? tot / (1 - f.margem) : null;
+  const so = canal === 'delivery' ? (f.salao || []).filter(i => !(f.delivery || []).some(d => norm(d.nome) === norm(i.nome))) : [];
+  const conf = S.confirmar === 'ficha:' + f.nome;
+  return `<div class="detail">
+    ${S.hist.length ? `<div><button class="link" data-voltar>← Voltar para ${esc(S.hist[S.hist.length - 1])}</button></div>` : ''}
+    <div class="title-row">
+      <input type="text" id="f-nome" aria-label="Nome da ficha" data-a="f-nome" value="${esc(f.nome)}">
+      ${!comp ? '' : f.delivery ? `<div class="seg"><button data-canal="salao" aria-pressed="${canal === 'salao'}">Salão</button><button data-canal="delivery" aria-pressed="${canal === 'delivery'}">Delivery</button></div>` : '<button class="ghost" data-criar-del>Criar versão delivery</button>'}
+      <button class="ghost" data-mover aria-expanded="${!!S.mover}">Mover</button>
+    </div>
+    ${S.mover ? painelMoverFicha(c, f) : ''}
+    <div class="kpis">
+      <div class="kpi"><span>Custo total</span><b>${brl(tot)}</b></div>
+      ${canal === 'salao' ? `<div class="kpi"><label for="f-margem">Margem (%)</label><input type="text" inputmode="decimal" id="f-margem" data-a="f-margem" value="${esc(pctTxt(f.margem))}" placeholder="sem margem"></div>
+      <div class="kpi"><span>Preço sugerido</span><b>${brl(sug)}</b></div>` : `<div class="kpi"><span>Diferença para o salão</span><b>${tot - C.total(f, 'salao') >= 0 ? '+ ' : '− '}${brl(Math.abs(tot - C.total(f, 'salao')))}</b></div>`}
+      <div class="kpi"><label for="f-cat">Categoria</label><select id="f-cat" data-a="f-cat">${[...new Set([...CATS, f.categoria])].map(k => `<option${k === f.categoria ? ' selected' : ''}>${esc(k)}</option>`).join('')}</select></div>
+      ${gerado ? `<div class="kpi"><label for="f-rend">Rendimento (${esc(UN[gerado.unidade] || gerado.unidade || 'un')})</label><input type="text" inputmode="decimal" id="f-rend" data-a="f-rend" value="${esc(numTxt(gerado.embalagem))}"></div>
+      <div class="kpi"><span>Custo por ${esc(UN[gerado.unidade] || gerado.unidade || 'unidade')}</span><b>${brlU(C.unit(gerado.nome))}</b></div>` : ''}
+    </div>
+    ${gerado && canal === 'salao' ? (() => { const soma = somaIngredientes(c, f), un = UN[gerado.unidade] || gerado.unidade || 'un', massa = PESO[norm(gerado.unidade)]; return soma > 0 && gerado.embalagem > 0 ? `<p class="muted">Soma dos ingredientes: <b>${nf(0, 1).format(soma)} g</b> · ${massa ? `aproveitamento <b>${nf(0, 1).format(gerado.embalagem * massa / soma * 100)}%</b>` : `<b>${nf(0, 1).format(soma / gerado.embalagem)} g</b> por ${esc(un)}`}. O rendimento acompanha as quantidades; se mudar o rendimento à mão, a proporção nova passa a valer.</p>` : ''; })() : ''}
+    ${f.categoria === 'Especiais' && canal === 'salao' ? blocoEspecial(f, tot) : ''}
+    ${so.length ? `<p class="muted"><b>Só no salão:</b> ${so.map(i => esc(i.nome)).join(', ')}</p>` : ''}
+    <div class="tbl"><table><thead><tr><th class="hcol"></th><th>Ingrediente</th><th class="num">Qtde</th><th>Un.</th><th class="num">Custo</th><th class="col-bar">% da ficha</th><th></th><th></th></tr></thead>
+      <tbody data-dnd="item">${linhas || '<tr><td colspan="8" class="muted">Sem ingredientes ainda.</td></tr>'}</tbody>
+      <tfoot><tr><td colspan="4">Total</td><td class="num">${brl(tot)}</td><td colspan="3"></td></tr></tfoot></table></div>
+    <div class="actions"><button class="ghost solid" id="add-item" data-add-item>Adicionar ingrediente</button></div>
+    <label class="field">Anotações<textarea id="f-notas" data-a="f-notas" rows="2">${esc(f.notas)}</textarea></label>
+    ${gerado ? `<p class="muted">Esta receita gera o insumo <b>${esc(gerado.nome)}</b>${usadoEm.length ? `, usado em ${usadoEm.length} ${usadoEm.length === 1 ? 'ficha' : 'fichas'}: ${usadoEm.map(n => `<button class="link" data-abrir="${esc(n)}">${esc(n)}</button>`).join(', ')}` : ''}.</p>` : ''}
+    <div class="actions">
+      <button class="ghost" data-dup>Duplicar ficha</button>
+      ${conf ? `<span class="status err">Apagar esta ficha?</span><button class="ghost danger" data-del-ficha>Sim, apagar</button><button class="ghost" data-cancelar>Cancelar</button>` : `<button class="ghost danger" data-pede-del="ficha:${esc(f.nome)}">Apagar ficha</button>`}
+    </div>
+  </div>`;
+}
+function renderFichas(c, C) {
+  const cats = CATS.filter(k => c.fichas.some(f => f.categoria === k));
+  return `<div class="layout">
+    <aside class="panel side">
+      <div class="side-head">
+        <input type="search" id="busca" placeholder="Buscar ficha ou ingrediente" aria-label="Buscar ficha ou ingrediente" value="${esc(S.busca)}">
+        <div class="chips">${['Todas', ...cats].map(k => `<button class="chip" data-cat="${esc(k)}" aria-pressed="${S.cat === k}">${esc(k)}</button>`).join('')}</div>
+        <div class="actions" style="flex-wrap:nowrap"><select id="ordem" aria-label="Ordenar fichas">
+          <option value="planilha"${S.ordem === 'planilha' ? ' selected' : ''}>Minha ordem (arrastar)</option>
+          <option value="nome"${S.ordem === 'nome' ? ' selected' : ''}>Nome (A–Z)</option>
+          <option value="custo"${S.ordem === 'custo' ? ' selected' : ''}>Maior custo</option></select>
+          <button class="ghost solid" data-nova-ficha style="white-space:nowrap">Nova ficha</button></div>
+      </div>
+      <div class="list" id="lista">${linhasLista(c, C)}</div>
+    </aside>
+    <section class="panel" id="detalhe">${renderDetalhe(c, C)}</section>
+  </div>`;
+}
+function renderEspeciais(c, C) {
+  const F = S.espForm;
+  const bases = c.fichas.filter(f => f.categoria !== 'Preparos base').map(f => f.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const todos = c.fichas.filter(f => f.categoria === 'Especiais');
+  const l = todos.filter(f => (S.espTipo === 'Todos' || (f.tipo || 'Sem tipo') === S.espTipo) && (S.espSit === 'Todos' || statusEsp(f)[0] === S.espSit))
+    .sort((a, b) => STATUS_ORD.indexOf(statusEsp(a)[0]) - STATUS_ORD.indexOf(statusEsp(b)[0]) || String(b.inicio || '').localeCompare(String(a.inicio || '')) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  const conta = s => todos.filter(f => statusEsp(f)[0] === s).length;
+  const tiposUsados = ['Todos', ...TIPOS_ESP, ...(todos.some(f => !f.tipo) ? ['Sem tipo'] : [])];
+  const linhas = l.map(f => {
+    const k = c.fichas.indexOf(f), tot = C.total(f, 'salao'), [st, cl] = statusEsp(f);
+    const n = (f.salao || []).length, rev = (f.salao || []).concat(f.delivery || []).filter(i => C.situacao(i)).length;
+    const cmv = f.preco ? tot / f.preco : null;
+    return `<tr>
+      <td class="w-n"><button class="link" data-ficha="${esc(f.nome)}">${esc(f.nome)}</button><span class="sub">${n ? `${n} ${n === 1 ? 'ingrediente' : 'ingredientes'}` : '<span class="flag">ficha sem ingredientes</span>'}${rev ? ` · <span class="flag">${rev} a revisar</span>` : ''}</span></td>
+      <td class="w-u"><select id="esp-${k}-t" aria-label="Tipo de ${esc(f.nome)}" data-a="f-tipo" data-n="${esc(f.nome)}"><option value=""${!f.tipo ? ' selected' : ''}>—</option>${TIPOS_ESP.map(t => `<option${f.tipo === t ? ' selected' : ''}>${t}</option>`).join('')}</select></td>
+      <td class="w-d"><input type="date" id="esp-${k}-i" aria-label="Início de ${esc(f.nome)}" data-a="f-ini" data-n="${esc(f.nome)}" value="${esc(f.inicio || '')}"></td>
+      <td class="w-d"><input type="date" id="esp-${k}-f" aria-label="Fim de ${esc(f.nome)}" data-a="f-fim" data-n="${esc(f.nome)}" value="${esc(f.fim || '')}"></td>
+      <td><span class="tag ${cl}">${st}</span></td>
+      <td class="num">${brl(tot)}</td>
+      <td class="w-p"><input class="nb" type="text" inputmode="decimal" id="esp-${k}-p" aria-label="Preço de venda de ${esc(f.nome)}" data-a="f-preco" data-n="${esc(f.nome)}" value="${esc(f.preco == null ? '' : nf(2).format(f.preco))}" placeholder="—"></td>
+      <td class="num">${cmv == null ? '—' : nf(1).format(cmv * 100) + '%'}</td>
+      <td class="num">${f.preco == null ? '—' : brl(f.preco - tot)}</td>
+      <td style="white-space:nowrap">${S.confirmar === 'esp:' + f.nome ? `<span class="status err">Excluir?</span> <button class="ghost danger" data-esp-del="${esc(f.nome)}">Sim, excluir</button> <button class="ghost" data-cancelar>Não</button>` : `<button class="ghost" data-esp-mover="${esc(f.nome)}">Mover</button> <button class="ghost danger" data-pede-del="esp:${esc(f.nome)}">Excluir</button>`}</td></tr>`;
+  }).join('');
+  return `<div class="esp">
+    <section class="panel pad" aria-labelledby="t-cad">
+      <h2 id="t-cad">Cadastrar especial</h2>
+      <p class="muted">Preencha o básico aqui. Em seguida a ficha abre para você colocar os ingredientes, e o custo e o CMV aparecem na lista abaixo.</p>
+      <div class="seg" role="group" aria-label="Tipo de especial">${TIPOS_ESP.map(t => `<button data-esp-tipo="${t}" aria-pressed="${F.tipo === t}">${t}</button>`).join('')}</div>
+      <div class="form">
+        <label class="field wide">Nome<input type="text" id="espf-nome" data-ef="nome" value="${esc(F.nome)}" placeholder="${F.tipo === 'Pizza' ? 'Ex.: Pizza de costela com cebola caramelizada' : 'Ex.: Smash de cheddar inglês e bacon'}"></label>
+        <label class="field">Preço de venda (R$)<input type="text" inputmode="decimal" id="espf-preco" data-ef="preco" value="${esc(F.preco)}" placeholder="0,00"></label>
+        <label class="field">No cardápio de<input type="date" id="espf-inicio" data-ef="inicio" value="${esc(F.inicio)}"></label>
+        <label class="field">até<input type="date" id="espf-fim" data-ef="fim" value="${esc(F.fim)}"></label>
+        <label class="field">Partir dos ingredientes de<select id="espf-base" data-ef="base"><option value="">Começar do zero</option>${bases.map(b => `<option${F.base === b ? ' selected' : ''}>${esc(b)}</option>`).join('')}</select></label>
+      </div>
+      <label class="field">Descrição para o cardápio<textarea id="espf-desc" data-ef="desc" rows="2" placeholder="Como o especial vai aparecer para o cliente">${esc(F.desc)}</textarea></label>
+      <div class="actions"><button class="ghost solid" id="cad-esp" data-cad-esp>Cadastrar e montar ficha</button></div>
+    </section>
+    <section class="panel pad" aria-labelledby="t-lista">
+      <h2 id="t-lista">Especiais cadastrados</h2>
+      <p class="muted">${conta('No cardápio')} no cardápio agora · ${conta('Programado')} programados · ${conta('Encerrado')} encerrados. CMV é o custo da ficha dividido pelo preço de venda.</p>
+      <div class="chips">${tiposUsados.map(t => `<button class="chip" data-esp-f="${esc(t)}" aria-pressed="${S.espTipo === t}">${t === 'Todos' ? 'Todos os tipos' : t === 'Lanche' ? 'Lanches' : t === 'Pizza' ? 'Pizzas' : t}</button>`).join('')}</div>
+      <div class="chips">${['Todos', ...STATUS_ORD].map(t => `<button class="chip" data-esp-s="${esc(t)}" aria-pressed="${S.espSit === t}">${t === 'Todos' ? 'Qualquer situação' : t}</button>`).join('')}</div>
+      <div class="tbl"><table><thead><tr><th>Especial</th><th>Tipo</th><th>De</th><th>Até</th><th>Situação</th><th class="num">Custo</th><th class="num">Preço de venda</th><th class="num">CMV</th><th class="num">Lucro bruto</th><th></th></tr></thead>
+      <tbody>${linhas || `<tr><td colspan="10" class="muted">${todos.length ? 'Nenhum especial com esses filtros.' : 'Nenhum especial cadastrado ainda. Use o formulário acima para cadastrar o primeiro.'}</td></tr>`}</tbody></table></div>
+    </section>
+  </div>`;
+}
+function listaReceitas() {
+  const q = semAcento(S.recBusca);
+  const l = recOrdenadas().filter(([, r]) => (S.recCat === 'Todas' || (r.categoria || 'Sem categoria') === S.recCat) && (!q || semAcento(r.nome).includes(q) || (r.ingredientes || []).some(i => semAcento(i.nome).includes(q))));
+  if (!l.length) return `<div class="note" style="margin:10px">${Object.keys(S.receitas).length ? 'Nenhuma receita encontrada.' : 'Nenhuma receita ainda. Clique em Nova receita para cadastrar a primeira.'}</div>`;
+  const cats = [...new Set(l.map(([, r]) => r.categoria || 'Sem categoria'))];
+  const calcs = {};
+  const custoDe = r => { const cid = casaDaReceita(r), c = S.casas[cid]; if (!c) return null; const C = calcs[cid] || (calcs[cid] = calcular(c)); return custoReceita(r, c, C); };
+  return cats.map(k => {
+    const g = l.filter(([, r]) => (r.categoria || 'Sem categoria') === k);
+    return `<div class="group">${esc(k)} (${g.length})</div><div data-dnd="rec">` + g.map(([id, r]) => {
+      const n = (r.ingredientes || []).length, p = (r.passos || []).filter(x => x.trim()).length, cu = custoDe(r);
+      return `<div class="rowwrap" data-dnd-item data-key="${esc(id)}">${alca('rec', id, r.nome)}<button class="row" data-rec="${esc(id)}" aria-current="${id === S.rec}"><b>${esc(r.nome)}</b><span class="val">${cu ? brl(cu.t) : '—'}</span><small>${r.rendimento && r.rendimento.qtde != null ? esc(fq(r.rendimento.qtde) + ' ' + (r.rendimento.unidade || '')) + ' · ' : ''}${n} ${n === 1 ? 'ingrediente' : 'ingredientes'} · ${p} ${p === 1 ? 'passo' : 'passos'}</small></button></div>`;
+    }).join('') + '</div>';
+  }).join('');
+}
+/* Custo da receita: pela ficha ligada (na casa da receita) ou, sem ficha, somando os insumos dessa casa. */
+const casaDaReceita = r => r.casa && S.casas[r.casa] ? r.casa : S.casa;
+/* Conversão simples entre g/kg/mg e ml/L, para a receita poder usar outra unidade que o insumo. */
+const FAT_UN = { g: ['m', 1], kg: ['m', 1000], mg: ['m', 0.001], ml: ['v', 1], l: ['v', 1000] };
+function converter(q, de, para) {
+  if (q == null) return null;
+  const a = norm(de), b = norm(para);
+  if (!a || !b || a === b) return q;
+  const x = FAT_UN[a], y = FAT_UN[b];
+  return x && y && x[0] === y[0] ? Math.round(q * x[1] / y[1] * 1e6) / 1e6 : null;
+}
+/* Receita ligada a uma ficha: as duas ficam iguais. Mudou a receita, a ficha acompanha; mudou a ficha, a receita acompanha. */
+let sincronizando = false;
+function recParaFicha(id) {
+  const r = S.receitas[id]; if (!r || !r.ficha || sincronizando) return;
+  const cid = casaDaReceita(r), c = S.casas[cid]; if (!c) return;
+  const f = c.fichas.find(x => norm(x.nome) === norm(r.ficha)); if (!f) return;
+  const C = calcular(c);
+  const itens = (r.ingredientes || []).filter(i => norm(i.nome)).map(i => {
+    const ins = C.ins.get(norm(i.nome)), un = ins ? (UN[ins.unidade] || ins.unidade || '') : '';
+    const q = converter(i.qtde, i.unidade, un);
+    return { nome: i.nome, qtde: q == null ? i.qtde : q };
+  });
+  const gerado = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
+  sincronizando = true;
+  try {
+    mudar(() => {
+      const mesmoDelivery = f.delivery && canon(f.delivery) === canon(f.salao);
+      f.salao = itens;
+      if (mesmoDelivery) f.delivery = JSON.parse(JSON.stringify(itens));
+      if (gerado && r.rendimento && r.rendimento.qtde > 0) { const q = converter(r.rendimento.qtde, r.rendimento.unidade, UN[gerado.unidade] || gerado.unidade); if (q != null && q > 0) gerado.embalagem = q; }
+    }, cid);
+  } finally { sincronizando = false; }
+  fichaParaRecs(cid);
+}
+/* Rendimento automático: cada preparo guarda a proporção entre o rendimento e a soma dos ingredientes
+   (em g/kg/ml/L, versão salão). Mudou a quantidade, o rendimento acompanha; mudou o rendimento, a proporção é recalculada. */
+const PESO = { gramas: 1, g: 1, quilos: 1000, kg: 1000, ml: 1, mililitros: 1, litros: 1000, l: 1000 };
+function somaIngredientes(c, f) {
+  const ins = new Map(c.insumos.map(i => [norm(i.nome), i]));
+  let s = 0;
+  for (const it of (f && f.salao) || []) { const i = norm(it.nome) ? ins.get(norm(it.nome)) : null; const k = i ? PESO[norm(i.unidade)] : null; if (k && it.qtde != null) s += it.qtde * k; }
+  return s;
+}
+function ajustarRendimentos(velha, nova) {
+  for (const f of nova.fichas) {
+    const g = nova.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome)); if (!g) continue;
+    const fv = velha.fichas.find(x => norm(x.nome) === norm(f.nome));
+    const gv = velha.insumos.find(i => norm(i.nome) === norm(g.nome));
+    const s0 = fv ? somaIngredientes(velha, fv) : 0, s1 = somaIngredientes(nova, f);
+    if (f.rendFator == null && gv && gv.embalagem > 0 && s0 > 0) f.rendFator = gv.embalagem / s0;
+    if (!gv || g.embalagem !== gv.embalagem) { if (g.embalagem > 0 && s1 > 0) f.rendFator = g.embalagem / s1; continue; }
+    if (f.rendFator > 0 && s0 > 0 && s1 > 0 && Math.abs(s1 - s0) > 1e-9) g.embalagem = Math.round(s1 * f.rendFator * 100) / 100;
+  }
+}
+function fichaParaRecs(cid) {
+  if (sincronizando) return;
+  const c = S.casas[cid]; if (!c) return;
+  const C = calcular(c);
+  for (const [id, r] of Object.entries(S.receitas)) {
+    if (!r.ficha || casaDaReceita(r) !== cid) continue;
+    const f = c.fichas.find(x => norm(x.nome) === norm(r.ficha)); if (!f) continue;
+    const antigos = new Map((r.ingredientes || []).map(i => [norm(i.nome), i]));
+    const novos = (f.salao || []).filter(i => norm(i.nome)).map(it => {
+      const ins = C.ins.get(norm(it.nome)), un = ins ? (UN[ins.unidade] || ins.unidade || '') : '', old = antigos.get(norm(it.nome));
+      let ru = old && old.unidade ? old.unidade : un, q = converter(it.qtde, un, ru);
+      if (q == null) { q = it.qtde; ru = un; }
+      return { nome: it.nome, obs: old ? old.obs || '' : '', qtde: q, unidade: ru };
+    });
+    let mudou = false;
+    if (canon(novos) !== canon((r.ingredientes || []).map(i => ({ nome: i.nome, obs: i.obs || '', qtde: i.qtde, unidade: i.unidade })))) { r.ingredientes = novos; mudou = true; }
+    const gerado = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
+    if (gerado && gerado.embalagem > 0) {
+      const gu = UN[gerado.unidade] || gerado.unidade || '', ru = r.rendimento && r.rendimento.unidade || gu;
+      const q = converter(gerado.embalagem, gu, ru);
+      if (q != null && (!r.rendimento || r.rendimento.qtde !== q)) { r.rendimento = { qtde: q, unidade: ru }; mudou = true; }
+    }
+    if (mudou) { r.atualizado = hoje(); agendarSalvar('receitas/' + id); }
+  }
+}
+function custoReceita(r, c, C) {
+  const cid = casaDaReceita(r), cc = S.casas[cid] || c;
+  const CC = cc === c && C ? C : calcular(cc);
+  const f = r.ficha ? cc.fichas.find(x => norm(x.nome) === norm(r.ficha)) : null;
+  const ingCusto = i => {
+    const ins = norm(i.nome) && CC.ins.get(norm(i.nome));
+    if (!ins || i.qtde == null) return null;
+    const un = UN[ins.unidade] || ins.unidade || '';
+    const q = converter(i.qtde, i.unidade, un);
+    if (q == null) return null;
+    const u = CC.unit(i.nome);
+    return u == null ? null : u * q;
+  };
+  let t = null;
+  const v = (r.ingredientes || []).map(ingCusto);
+  if (v.some(x => x != null)) t = v.reduce((a, x) => a + (x || 0), 0);
+  else if (f) t = CC.total(f, 'salao');
+  if (t == null) return null;
+  const q = r.rendimento && r.rendimento.qtde;
+  const semValor = (r.ingredientes || []).filter(i => norm(i.nome) && ingCusto(i) == null).length;
+  return { f, t, un: q ? t / q : null, cid, cc, CC, ingCusto, semValor };
+}
+function renderReceita(c, C) {
+  const r = S.receitas[S.rec];
+  if (!r) return '<div class="detail"><div class="note">Escolha uma receita na lista ou crie uma nova.</div></div>';
+  const e = S.recEscala, ing = r.ingredientes || [], passos = r.passos || [];
+  const cu = custoReceita(r, c, C), rendU = r.rendimento && r.rendimento.unidade || '';
+  const escala = `<div class="escala" role="group" aria-label="Quantidade a produzir">Produzir:${[0.5, 1, 2, 3].map(x => `<button class="chip" data-escala="${x}" aria-pressed="${e === x}">${fq(x)}×</button>`).join('')}<input type="text" inputmode="decimal" id="rec-escala" aria-label="Multiplicar receita por" value="${[0.5, 1, 2, 3].includes(e) ? '' : esc(fq(e))}" placeholder="outro">${r.rendimento && r.rendimento.qtde != null ? `<span>rende <b>${esc(fq(r.rendimento.qtde * e))} ${esc(rendU)}</b></span>` : ''}</div>`;
+  const conf = S.confirmar === 'rec:' + S.rec;
+  const rodape = `<div class="actions"><button class="ghost" data-rec-dup>Duplicar receita</button>
+      ${conf ? `<span class="status err">Apagar esta receita?</span><button class="ghost danger" data-rec-del>Sim, apagar</button><button class="ghost" data-cancelar>Cancelar</button>` : `<button class="ghost danger" data-pede-del="rec:${esc(S.rec)}">Apagar receita</button>`}
+      ${r.atualizado ? `<span class="muted">Atualizada em ${esc(r.atualizado.split('-').reverse().join('/'))}</span>` : ''}</div>`;
+  const modo = `<div class="seg" role="group" aria-label="Modo"><button data-rec-modo="ler" aria-pressed="${S.recModo === 'ler'}">Ler</button><button data-rec-modo="editar" aria-pressed="${S.recModo === 'editar'}">Editar</button></div>`;
+  if (S.recModo === 'ler') {
+    const meta = [['Categoria', r.categoria], ['Rendimento', r.rendimento && r.rendimento.qtde != null ? fq(r.rendimento.qtde) + ' ' + rendU : ''], ['Tempo', r.tempo], ['Validade', r.validade], ['Armazenamento', r.armazenamento]].filter(([, v]) => v);
+    return `<div class="detail ler">
+      <div class="title-row"><h1 class="ler-nome" style="flex:1 1 240px">${esc(r.nome)}</h1>${modo}<button class="ghost" data-mover aria-expanded="${!!S.mover}">Mover</button></div>
+      ${S.mover ? painelMoverReceita(r) : ''}
+      ${meta.length ? `<div class="meta">${meta.map(([k, v]) => `<span>${k}: <b>${esc(v)}</b></span>`).join('')}</div>` : ''}
+      ${cu ? `<div class="meta"><span>Custo da receita: <b>${brl(cu.t * e)}</b></span>${cu.un != null ? `<span>Custo por ${esc(rendU || 'unidade')}: <b>${brlU(cu.un)}</b></span>` : ''}<span>Preços de: <b>${esc(cu.cc.nome)}</b></span>${cu.f ? `<button class="link" data-ir-casa="${esc(cu.cid)}" data-ir-ficha="${esc(cu.f.nome)}">abrir ficha de custo</button>` : ''}</div>${!cu.f && cu.semValor ? `<p class="muted">${cu.semValor} ${cu.semValor === 1 ? 'ingrediente ficou' : 'ingredientes ficaram'} fora da soma: o nome não está nos insumos de ${esc(cu.cc.nome)} ou a unidade é diferente da cadastrada.</p>` : ''}` : `<p class="muted">Sem custo: ligue esta receita a uma ficha em Editar, ou escolha a casa para somar pelos insumos.</p>`}
+      ${escala}
+      <h2>Ingredientes</h2>
+      ${ing.length ? `<div class="tbl"><table><tbody>${ing.map(i => { const v = cu ? cu.ingCusto(i) : null; return `<tr><td class="num" style="width:1%"><b>${i.qtde == null ? '' : esc(fq(i.qtde * e))}</b></td><td style="width:1%;white-space:nowrap">${esc(i.unidade)}</td><td>${esc(i.nome)}${i.obs ? ` <span class="muted">· ${esc(i.obs)}</span>` : ''}</td>${cu ? `<td class="num">${v == null ? '—' : brl(v * e)}</td>` : ''}</tr>`; }).join('')}</tbody>${cu ? `<tfoot><tr><td colspan="3">Total</td><td class="num">${brl(cu.t * e)}</td></tr></tfoot>` : ''}</table></div>` : '<p class="muted">Sem ingredientes ainda. Clique em Editar para adicionar.</p>'}
+      <h2>Modo de preparo</h2>
+      ${passos.some(p => p.trim()) ? `<ol class="passos">${passos.filter(p => p.trim()).map(p => `<li><p>${esc(p)}</p><span></span></li>`).join('')}</ol>` : '<p class="muted">Sem passos ainda. Clique em Editar para escrever o modo de preparo.</p>'}
+      ${r.obs ? `<h2>Pontos de atenção</h2><p class="obs">${esc(r.obs)}</p>` : ''}
+      ${rodape}
+    </div>`;
+  }
+  const cRec = S.casas[casaDaReceita(r)] || c;
+  const fichas = cRec.fichas.map(f => f.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const idsCasas = Object.keys(S.casas).sort((a, b) => (S.casas[a].ordem ?? 9) - (S.casas[b].ordem ?? 9));
+  return `<div class="detail">
+    <div class="title-row"><input type="text" id="rec-nome" aria-label="Nome da receita" data-r="nome" value="${esc(r.nome)}">${modo}<button class="ghost" data-mover aria-expanded="${!!S.mover}">Mover</button></div>
+    ${S.mover ? painelMoverReceita(r) : ''}
+    <div class="kpis">
+      <div class="kpi"><label for="rec-cat">Categoria</label><input type="text" id="rec-cat" list="dl-reccat" data-r="categoria" value="${esc(r.categoria)}" placeholder="Ex.: Molhos"></div>
+      <div class="kpi"><label for="rec-rq">Rendimento</label><div class="duo"><input type="text" inputmode="decimal" id="rec-rq" aria-label="Quantidade que rende" data-r="rendQ" value="${esc(r.rendimento ? fq(r.rendimento.qtde) : '')}"><input type="text" id="rec-ru" list="dl-unrec" aria-label="Unidade do rendimento" data-r="rendU" value="${esc(rendU)}" placeholder="kg, un…"></div></div>
+      <div class="kpi"><label for="rec-tempo">Tempo de preparo</label><input type="text" id="rec-tempo" data-r="tempo" value="${esc(r.tempo)}" placeholder="Ex.: 1h30"></div>
+      <div class="kpi"><label for="rec-val">Validade</label><input type="text" id="rec-val" data-r="validade" value="${esc(r.validade)}" placeholder="Ex.: 3 dias"></div>
+      <div class="kpi"><label for="rec-arm">Armazenamento</label><input type="text" id="rec-arm" data-r="armazenamento" value="${esc(r.armazenamento)}" placeholder="Ex.: refrigerado até 5 °C"></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><label for="rec-casa">Preços de</label><select id="rec-casa" data-r="casa">${idsCasas.map(id => `<option value="${esc(id)}"${id === casaDaReceita(r) ? ' selected' : ''}>${esc(S.casas[id].nome)}</option>`).join('')}</select></div>
+      <div class="kpi"><label for="rec-ficha">Ficha de custo (${esc(cRec.nome)})</label><select id="rec-ficha" data-r="ficha"><option value="">Nenhuma</option>${fichas.map(n => `<option${r.ficha && norm(r.ficha) === norm(n) ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+      ${cu ? `<div class="kpi"><span>Custo da receita</span><b>${brl(cu.t)}</b></div><div class="kpi"><span>Custo por ${esc(rendU || 'unidade')}</span><b>${brlU(cu.un)}</b></div>` : ''}
+    </div>
+    ${cu && cu.f ? `<p class="muted">Ligada à ficha <b>${esc(cu.f.nome)}</b>: o que você muda nos ingredientes ou no rendimento aqui também muda na ficha, e o contrário também.</p>` : ""}
+    ${escala}
+    <h2>Ingredientes</h2>
+    <div class="tbl"><table><thead><tr><th class="hcol"></th><th>Ingrediente</th><th class="num">Qtde</th><th>Unidade</th>${e !== 1 ? `<th class="num">Para ${esc(fq(e))}×</th>` : ''}<th>Observação</th><th></th></tr></thead><tbody data-dnd="ring">
+    ${ing.map((i, k) => `<tr data-dnd-item data-key="${k}">
+      <td class="hcol">${alca('ring', k, i.nome)}</td>
+      <td class="w-n"><input type="text" id="ri-${k}-n" list="dl-insumos" aria-label="Ingrediente" data-ri="nome" data-k="${k}" value="${esc(i.nome)}"></td>
+      <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="ri-${k}-q" aria-label="Quantidade" data-ri="qtde" data-k="${k}" value="${esc(fq(i.qtde))}"></td>
+      <td class="w-u"><input type="text" id="ri-${k}-u" list="dl-unrec" aria-label="Unidade" data-ri="unidade" data-k="${k}" value="${esc(i.unidade)}"></td>
+      ${e !== 1 ? `<td class="num">${i.qtde == null ? '—' : esc(fq(i.qtde * e))}</td>` : ''}
+      <td class="w-s"><input type="text" id="ri-${k}-o" aria-label="Observação" data-ri="obs" data-k="${k}" value="${esc(i.obs)}" placeholder="Ex.: picado fino"></td>
+      <td><button class="ghost" aria-label="Remover ${esc(i.nome || 'linha')}" data-rec-rm-ing="${k}">×</button></td></tr>`).join('') || `<tr><td colspan="7" class="muted">Sem ingredientes ainda.</td></tr>`}
+    </tbody></table></div>
+    <div class="actions"><button class="ghost solid" id="rec-add-ing" data-rec-add-ing>Adicionar ingrediente</button>${cu && cu.f ? `<button class="ghost" data-rec-puxar>Puxar ingredientes da ficha</button>` : ''}</div>
+    <h2>Modo de preparo</h2>
+    <ol class="passos" data-dnd="rpasso">${passos.map((p, k) => `<li data-dnd-item data-key="${k}"><textarea id="rp-${k}" aria-label="Passo ${k + 1}" data-rp="${k}" rows="2">${esc(p)}</textarea><span class="mv">${alca('rpasso', k, 'passo ' + (k + 1))}<button class="ghost" aria-label="Remover passo ${k + 1}" data-rec-rm-passo="${k}">×</button></span></li>`).join('')}</ol>
+    <div class="actions"><button class="ghost solid" id="rec-add-passo" data-rec-add-passo>Adicionar passo</button></div>
+    <label class="field">Pontos de atenção<textarea id="rec-obs" data-r="obs" rows="2" placeholder="Ex.: não deixar ferver depois de colocar o creme">${esc(r.obs)}</textarea></label>
+    ${rodape}
+  </div>`;
+}
+function renderReceitas(c, C) {
+  const cats = [...new Set(Object.values(S.receitas).map(r => r.categoria || 'Sem categoria'))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  return `<div class="layout">
+    <aside class="panel side">
+      <div class="side-head">
+        <input type="search" id="recBusca" placeholder="Buscar receita ou ingrediente" aria-label="Buscar receita ou ingrediente" value="${esc(S.recBusca)}">
+        ${cats.length > 1 ? `<div class="chips">${['Todas', ...cats].map(k => `<button class="chip" data-rec-cat="${esc(k)}" aria-pressed="${S.recCat === k}">${esc(k)}</button>`).join('')}</div>` : ''}
+        <div class="actions"><button class="ghost solid" data-rec-nova>Nova receita</button><span class="muted">Cada receita usa os preços da casa escolhida nela.</span></div>
+      </div>
+      <div class="list" id="listaRec">${listaReceitas()}</div>
+    </aside>
+    <section class="panel" id="detalhe">${renderReceita(c, C)}</section>
+  </div>`;
+}
+function corpoInsumos(c, C) {
+  const q = semAcento(S.insBusca);
+  const lin = c.insumos.map((i, k) => ({ i, k })).filter(({ i }) => (S.insGrupo === 'Todos' || i.grupo === S.insGrupo) && (!q || semAcento(i.nome).includes(q)));
+  const [cp, dir] = S.insOrd;
+  const val = ({ i }) => cp === 'custo' ? C.unit(i.nome) : cp === 'usos' ? (C.usos.get(norm(i.nome)) || new Set()).size : cp === 'preco' ? C.preco(i) : i[cp];
+  lin.sort((a, b) => { const x = val(a), y = val(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : String(x).replace(/^\*/, '').localeCompare(String(y).replace(/^\*/, ''), 'pt-BR')) * dir; });
+  if (!lin.length) return '<tr><td colspan="9" class="muted">Nenhum insumo encontrado.</td></tr>';
+  return lin.map(({ i, k }) => {
+    const usos = [...(C.usos.get(norm(i.nome)) || [])];
+    const sem = !i.origem && i.preco == null;
+    const aberto = S.insAberto === i.nome;
+    const conf = S.confirmar === 'ins:' + i.nome;
+    return `<tr data-dnd-item data-key="${k}">${S.insOrd[0] === '_' ? `<td class="hcol">${alca('ins', k, i.nome)}</td>` : ''}
+      <td class="w-n"><input type="text" id="ins-${k}-n" aria-label="Nome do insumo" data-a="ins-nome" data-k="${k}" value="${esc(i.nome)}"></td>
+      <td class="w-s"><input type="text" id="ins-${k}-g" list="dl-grupos" aria-label="Grupo" data-a="ins-grupo" data-k="${k}" value="${esc(i.grupo)}"></td>
+      <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-e" aria-label="Embalagem" data-a="ins-emb" data-k="${k}" value="${esc(numTxt(i.embalagem))}"></td>
+      <td class="w-u"><input type="text" id="ins-${k}-u" list="dl-unidades" aria-label="Unidade" data-a="ins-un" data-k="${k}" value="${esc(i.unidade)}"></td>
+      <td class="w-p"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-p" aria-label="Preço" data-a="ins-preco" data-k="${k}" value="${esc(i.origem ? nf(2).format(C.preco(i) ?? 0) : numTxt(i.preco))}"${i.origem ? ' title="Vem da receita de origem. Digitar um preço aqui desliga a receita de origem."' : ''}>${sem ? '<span class="tag warn">sem preço</span>' : ''}</td>
+      <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-f" aria-label="Fator de redução em %" data-a="ins-fator" data-k="${k}" value="${esc(pctTxt(i.fator))}"></td>
+      <td class="w-p"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-c" aria-label="Custo unitário de ${esc(i.nome)}" title="Digite o custo por ${esc(UN[i.unidade] || i.unidade || 'unidade')}; o preço da embalagem é recalculado." data-a="ins-custo" data-k="${k}" value="${esc(C.unit(i.nome) == null ? '' : (Math.abs(C.unit(i.nome)) < 1 ? nf(4) : nf(2)).format(C.unit(i.nome)))}" placeholder="—"></td>
+      <td class="w-n"><input type="text" id="ins-${k}-o" list="dl-fichas" aria-label="Receita de origem" data-a="ins-origem" data-k="${k}" value="${esc(i.origem)}" placeholder="comprado"></td>
+      <td class="num">${usos.length ? `<button class="link" data-usos="${esc(i.nome)}" aria-expanded="${aberto}">${usos.length}</button>` : '0'}</td>
+      <td style="white-space:nowrap">${conf ? `<button class="ghost danger" data-del-ins="${k}">Apagar</button> <button class="ghost" data-cancelar>Não</button>` : `<button class="ghost" aria-label="Apagar ${esc(i.nome)}" data-pede-del="ins:${esc(i.nome)}">×</button>`}</td></tr>
+      ${aberto ? `<tr class="expand"><td colspan="11"><b>Usado em:</b> ${usos.map(n => `<button class="link" data-abrir="${esc(n)}">${esc(n)}</button>`).join(', ')}</td></tr>` : ''}`;
+  }).join('');
+}
+function renderInsumos(c, C) {
+  const grupos = [...new Set(c.insumos.map(i => i.grupo).filter(Boolean))];
+  const th = (cp, n, cl) => `<th class="${cl || ''}"><button data-ord="${cp}">${n}${S.insOrd[0] === cp ? (S.insOrd[1] > 0 ? ' ↑' : ' ↓') : ''}</button></th>`;
+  return `<div class="panel pad">
+    <div class="filters"><input type="search" id="insBusca" placeholder="Buscar insumo" aria-label="Buscar insumo" value="${esc(S.insBusca)}">
+      <div class="chips">${['Todos', ...grupos].map(g => `<button class="chip" data-grupo="${esc(g)}" aria-pressed="${S.insGrupo === g}">${esc(g)}</button>`).join('')}</div>
+      <button class="ghost solid" data-novo-ins>Novo insumo</button></div>
+    <div class="actions"><button class="chip" data-ord="_" aria-pressed="${S.insOrd[0] === '_'}">Minha ordem (arrastar)</button><span class="muted">Clique no título de uma coluna para ordenar por ela.</span></div>
+    <p class="muted">Mudou um preço, todas as fichas que usam esse insumo recalculam. Renomear um insumo também atualiza as fichas. Quando há receita de origem, o preço vem dela.</p>
+    <div class="tbl"><table><thead><tr>${S.insOrd[0] === '_' ? '<th class="hcol"></th>' : ''}${th('nome', 'Insumo')}${th('grupo', 'Grupo')}${th('embalagem', 'Embalagem', 'num')}${th('unidade', 'Unidade')}${th('preco', 'Preço (R$)', 'num')}${th('fator', 'Redução (%)', 'num')}${th('custo', 'Custo unitário', 'num')}${th('origem', 'Receita de origem')}${th('usos', 'Fichas', 'num')}<th></th></tr></thead>
+    <tbody id="corpoIns" data-dnd="ins">${corpoInsumos(c, C)}</tbody></table></div></div>`;
+}
+function renderDelivery(c, C) {
+  const lin = c.fichas.filter(f => f.delivery && temCompar(f)).map(f => {
+    const a = new Map((f.salao || []).map(i => [norm(i.nome), i])), b = new Map((f.delivery || []).map(i => [norm(i.nome), i]));
+    const p = [];
+    for (const [k, i] of b) { if (!k) continue; const x = a.get(k); if (!x) p.push('+ ' + esc(i.nome)); else if (x.qtde !== i.qtde) p.push(`${esc(i.nome)}: ${esc(numTxt(x.qtde) || '—')} → ${esc(numTxt(i.qtde) || '—')}`); }
+    for (const [k, i] of a) if (k && !b.has(k)) p.push('− ' + esc(i.nome));
+    return { f, s: C.total(f, 'salao'), d: C.total(f, 'delivery'), p };
+  }).filter(x => x.p.length).sort((x, y) => Math.abs(y.d - y.s) - Math.abs(x.d - x.s));
+  return `<div class="panel pad"><p class="muted">${lin.length} ${lin.length === 1 ? 'ficha muda' : 'fichas mudam'} entre salão e delivery (só itens de venda e porções). Clique para abrir a versão do delivery.</p>
+  <div class="tbl"><table><thead><tr><th>Ficha</th><th class="num">Salão</th><th class="num">Delivery</th><th class="num">Diferença</th><th>O que muda no delivery</th></tr></thead><tbody>
+  ${lin.map(x => `<tr><td><button class="link" data-abrir-del="${esc(x.f.nome)}">${esc(x.f.nome)}</button></td><td class="num">${brl(x.s)}</td><td class="num">${brl(x.d)}</td><td class="num">${x.d - x.s >= 0 ? '+' : '−'} ${brl(Math.abs(x.d - x.s))}</td><td>${x.p.join('; ')}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nenhuma diferença.</td></tr>'}
+  </tbody></table></div></div>`;
+}
+function renderAlertas(A) {
+  const bloco = l => Object.keys(TIPOS).filter(t => l.some(a => a.tipo === t)).map(t => {
+    const g = l.filter(a => a.tipo === t);
+    return `<h3>${esc(t)} (${g.length})</h3><p class="muted">${esc(TIPOS[t])}</p><div class="tbl"><table><thead><tr><th>Ficha</th><th>Item</th><th>Onde</th></tr></thead><tbody>
+    ${g.map(a => `<tr><td>${a.ficha ? `<button class="link" data-abrir${a.canal === 'delivery' ? '-del' : ''}="${esc(a.ficha)}">${esc(a.ficha)}</button>` : '—'}</td><td>${esc(a.item)}</td><td>${a.canal === 'delivery' ? 'Delivery' : a.canal === 'salao' ? 'Salão' : 'Insumos'}</td></tr>`).join('')}</tbody></table></div>`;
+  }).join('');
+  const r = A.filter(a => a.nivel === 'revisar'), i = A.filter(a => a.nivel !== 'revisar');
+  return `<div class="panel pad"><p class="muted">Esta lista se atualiza conforme você edita. Nem todo ponto é erro; alguns podem ser intencionais.</p>
+  <h2>Para revisar (${r.length})</h2>${bloco(r) || '<p class="muted">Nada para revisar.</p>'}
+  ${i.length ? `<h2>Informativo (${i.length})</h2>${bloco(i)}` : ''}</div>`;
+}
+function renderOperacional(c) {
+  const o = c.operacional;
+  if (!o || !o.linhas || !o.linhas.length) return '<div class="note">Esta ficha não tem custos operacionais.</div>';
+  const soma = m => o.linhas.reduce((t, l) => t + (l.valores[m] || 0), 0);
+  const th = o.meses.map(m => `<th class="num">${esc(m)}</th>`).join('');
+  const cell = (id, a, l, m, v) => `<td class="w-p"><input class="nb" type="text" inputmode="decimal" id="${id}" aria-label="${esc(l)} em ${esc(o.meses[m])}" data-a="${a}" data-l="${esc(l)}" data-m="${m}" value="${esc(numTxt(v))}"></td>`;
+  return `<div class="panel pad"><p class="muted">O total soma as linhas de cada mês. Custo por venda é o total dividido pelas vendas.</p>
+  <div class="tbl"><table><thead><tr><th>Tipo de custo</th>${th}</tr></thead><tbody>
+  ${o.linhas.map((l, k) => `<tr><td style="min-width:190px">${esc(l.nome)}</td>${o.meses.map((_, m) => cell(`op-${k}-${m}`, 'op-val', k, m, l.valores[m])).join('')}</tr>`).join('')}
+  </tbody><tfoot><tr><td>Total dos custos</td>${o.meses.map((_, m) => `<td class="num">${soma(m) ? brl(soma(m)) : ''}</td>`).join('')}</tr>
+  <tr><td>Total vendido</td>${o.meses.map((_, m) => cell(`vd-${m}`, 'op-vd', 'Total vendido', m, o.vendas[m])).join('')}</tr>
+  <tr><td>Custo por venda</td>${o.meses.map((_, m) => `<td class="num">${o.vendas[m] ? brl(soma(m) / o.vendas[m]) : ''}</td>`).join('')}</tr></tfoot></table></div></div>`;
+}
+/* ---------- Multiplicar ---------- */
+const MULT_FATORES = [0.5, 1, 2, 3, 4, 5, 10];
+function dadosMult(c, C) {
+  const M = S.mult || (S.mult = { ficha: null, canal: 'salao', fator: 1, hist: [] });
+  let f = c.fichas.find(x => x.nome === M.ficha);
+  if (!f) { f = c.fichas.find(x => x.categoria === 'Preparos base') || c.fichas[0]; M.ficha = f ? f.nome : null; M.fator = 1; M.hist = []; }
+  if (!f) return null;
+  const canal = M.canal === 'delivery' && f.delivery && temCompar(f) ? 'delivery' : 'salao';
+  const e = M.fator;
+  const gerado = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
+  const rend = gerado && gerado.embalagem ? { q: gerado.embalagem, u: UN[gerado.unidade] || gerado.unidade || '' } : null;
+  const linhas = (f[canal] || []).map(it => {
+    const ins = norm(it.nome) ? C.ins.get(norm(it.nome)) : null;
+    const un = ins ? (UN[ins.unidade] || ins.unidade || '') : '';
+    const q = it.qtde == null ? null : it.qtde * e;
+    const sub = ins && ins.origem ? C.fic.get(norm(ins.origem)) : null;
+    const fs = sub && ins.embalagem && q != null ? q / ins.embalagem : null;
+    return { nome: it.nome || '(sem nome)', un, q0: it.qtde, q, custo: C.custo(it) * e, sit: C.situacao(it), sub, fs };
+  });
+  return { M, f, canal, e, rend, linhas, total: C.total(f, canal) * e };
+}
+function qtdMult(q, un) {
+  if (q == null) return '—';
+  const base = nf(0, 3).format(q) + (un ? ' ' + esc(un) : '');
+  if ((un === 'g' || un === 'ml') && Math.abs(q) >= 1000) return base + ` <span class="muted">(${nf(0, 3).format(q / 1000)} ${un === 'g' ? 'kg' : 'L'})</span>`;
+  return base;
+}
+function textoMult(c, C) {
+  const d = dadosMult(c, C); if (!d) return '';
+  const cab = `${d.f.nome}${d.f.delivery && temCompar(d.f) ? ' (' + (d.canal === 'delivery' ? 'delivery' : 'salão') + ')' : ''} × ${nf(0, 3).format(d.e)}` + (d.rend ? ` = ${nf(0, 3).format(d.rend.q * d.e)} ${d.rend.u}` : '');
+  return [cab, ...d.linhas.map(l => `- ${l.nome}: ${l.q == null ? 'sem quantidade' : nf(0, 3).format(l.q) + (l.un ? ' ' + l.un : '')}`)].join('\n');
+}
+function renderMultiplicar(c, C) {
+  const d = dadosMult(c, C);
+  if (!d) return '<div class="note">Esta casa ainda não tem fichas.</div>';
+  const { M, f, canal, e, rend, linhas, total } = d;
+  const grupos = [...new Set([...CATS, ...c.fichas.map(x => x.categoria)])].filter(k => c.fichas.some(x => x.categoria === k));
+  const opts = grupos.map(k => `<optgroup label="${esc(k)}">${c.fichas.filter(x => x.categoria === k).map(x => `<option${x.nome === f.nome ? ' selected' : ''}>${esc(x.nome)}</option>`).join('')}</optgroup>`).join('');
+  const outro = MULT_FATORES.includes(e) ? '' : nf(0, 3).format(e);
+  const anterior = M.hist.length ? M.hist[M.hist.length - 1] : null;
+  return `<div class="panel pad">
+    ${anterior ? `<div><button class="link" data-mult-voltar>← Voltar para ${esc(anterior.ficha)} (${nf(0, 2).format(anterior.fator)}×)</button></div>` : ''}
+    <div class="form">
+      <label class="field wide">Ficha<select id="mult-ficha">${opts}</select></label>
+      ${rend ? `<label class="field">Quero produzir (${esc(rend.u)})<input type="text" inputmode="decimal" id="mult-alvo" value="${esc(nf(0, 3).format(rend.q * e))}"></label>` : ''}
+    </div>
+    <div class="escala" role="group" aria-label="Multiplicar a ficha por">Multiplicar por:${MULT_FATORES.map(x => `<button class="chip" data-mult-fator="${x}" aria-pressed="${e === x}">${nf(0, 2).format(x)}×</button>`).join('')}<input type="text" inputmode="decimal" id="mult-fator" aria-label="Outro fator" value="${esc(outro)}" placeholder="outro"></div>
+    ${f.delivery && temCompar(f) ? `<div class="seg" role="group" aria-label="Versão da ficha"><button data-mult-canal="salao" aria-pressed="${canal === 'salao'}">Salão</button><button data-mult-canal="delivery" aria-pressed="${canal === 'delivery'}">Delivery</button></div>` : ''}
+    <div class="kpis">
+      <div class="kpi"><span>Fator</span><b>${nf(0, 3).format(e)}×</b></div>
+      ${rend ? `<div class="kpi"><span>Rende</span><b>${nf(0, 3).format(rend.q * e)} ${esc(rend.u)}</b></div>` : ''}
+      <div class="kpi"><span>Custo total</span><b>${brl(total)}</b></div>
+      ${rend ? `<div class="kpi"><span>Custo por ${esc(rend.u || 'unidade')}</span><b>${brlU(rend.q ? total / (rend.q * e) : null)}</b></div>` : ''}
+    </div>
+    <div class="tbl"><table><thead><tr><th>Ingrediente</th><th class="num">Na ficha</th><th class="num">Multiplicado</th><th class="num">Custo</th><th></th></tr></thead><tbody>
+    ${linhas.map(l => `<tr><td>${esc(l.nome)}${l.sit ? ` <span class="tag warn">${esc(l.sit)}</span>` : ''}</td><td class="num">${qtdMult(l.q0, l.un)}</td><td class="num"><b>${qtdMult(l.q, l.un)}</b></td><td class="num">${brl(l.custo)}</td><td class="w-sit">${l.sub ? `<button class="link" data-mult-sub="${esc(l.sub.nome)}" data-mult-f="${l.fs ?? 1}">calcular este preparo${l.q != null ? ' (' + nf(0, 3).format(l.q) + (l.un ? ' ' + esc(l.un) : '') + ')' : ''}</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Esta ficha não tem ingredientes.</td></tr>'}
+    </tbody><tfoot><tr><td colspan="3">Total</td><td class="num">${brl(total)}</td><td></td></tr></tfoot></table></div>
+    <div class="actions"><button class="ghost solid" data-mult-copiar>Copiar lista</button><button class="link" data-ficha="${esc(f.nome)}">Abrir a ficha</button></div>
+    <p class="muted">Só calcula: nada aqui altera a ficha. Quando um ingrediente é outro preparo, “calcular este preparo” mostra quanto fazer dele para esta produção.</p>
+  </div>`;
+}
+/* ---------- Erros e perdas ---------- */
+const MOTIVOS = ['Estragou', 'Venceu', 'Erro de preparo', 'Queimou', 'Caiu / derrubou', 'Devolução de cliente', 'Outro'];
+const MOTIVO_RE = [[/estrag|azed|mofa|podr|amarg/, 'Estragou'], [/venc/, 'Venceu'], [/queim|torr/, 'Queimou'], [/ca[ií]u|cair|derrub|virou|derram/, 'Caiu / derrubou'], [/devol|voltou|reclam/, 'Devolução de cliente'], [/err|trocad|a mais|sobrou|passou do ponto|salgad|quebr|careca|grudou|rasgou|desmanch/, 'Erro de preparo']];
+const PD_STOP = new Set('de do da dos das o a os as no na nos nas um uma uns umas por que se pq porque hoje foi foram fora ficou ficaram estragou estragaram estragado estragada estragados estragadas venceu venceram vencido vencida vencidos vencidas queimou queimaram queimado queimada queimados queimadas caiu cairam caido caida derrubou derrubaram derrubado errou erraram errado errada errados erradas lixo jogado jogada jogados jogar jogamos joguei perdeu perderam perdido perdida perda azedou mofou podre podres e com sem pra para em ao aos teve tinha tava estava muito pouco mais menos ja já ontem agora aqui ali kg g gr grs grama gramas ml l lt litro litros un und unid unidade unidades'.split(' '));
+const PD_PER = [['hoje', 'Hoje'], ['7d', '7 dias'], ['mes', 'Este mês'], ['mesant', 'Mês passado'], ['tudo', 'Tudo']];
+function pdPeriodo(p) {
+  const h = hoje(), d = new Date(h + 'T12:00:00');
+  if (p === 'hoje') return [h, h];
+  if (p === '7d') { const a = new Date(d); a.setDate(a.getDate() - 6); return [a.toLocaleDateString('sv'), h]; }
+  if (p === 'mes') return [h.slice(0, 8) + '01', h];
+  if (p === 'mesant') { const a = new Date(d.getFullYear(), d.getMonth() - 1, 1), b = new Date(d.getFullYear(), d.getMonth(), 0); return [a.toLocaleDateString('sv'), b.toLocaleDateString('sv')]; }
+  if (p && p.startsWith('m:')) { const ym = p.slice(2); return [ym + '-01', ym + '-31']; }
+  return ['0000', '9999'];
+}
+const nomeMes = ym => { const [y, m] = ym.split('-').map(Number); const t = new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
+const pdNomePer = p => p && p.startsWith('m:') ? nomeMes(p.slice(2)) : (PD_PER.find(x => x[0] === p) || [, ''])[1];
+function pdMeses() {
+  const st = S.pd.setor || 'Todos', m = new Map();
+  for (const p of Object.values(S.perdas)) {
+    if (st !== 'Todos' && p.casa !== st) continue;
+    const ym = (p.data || '').slice(0, 7); if (!/^\d{4}-\d{2}$/.test(ym)) continue;
+    const x = m.get(ym) || { v: 0, n: 0, set: new Map() }; const v = pdValor(p) || 0;
+    x.v += v; x.n++; x.set.set(p.casa, (x.set.get(p.casa) || 0) + v); m.set(ym, x);
+  }
+  return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+}
+function pdBlocoMeses() {
+  const meses = pdMeses(); if (!meses.length) return '';
+  const st = S.pd.setor || 'Todos';
+  const setores = st === 'Todos' ? casasOrd().filter(id => meses.some(([, x]) => x.set.get(id))) : [];
+  const max = Math.max(...meses.map(([, x]) => x.v), 0.01);
+  return `<section class="panel pad" aria-labelledby="t-meses"><h3 id="t-meses" style="margin:0">Mês a mês${st !== 'Todos' ? ' · ' + esc(nomeCasa(st)) : ''}</h3>
+    <p class="muted">Clique num mês para ver os lançamentos e os gráficos só dele.</p>
+    <div class="tbl"><table><thead><tr><th>Mês</th>${setores.map(id => `<th class="num">${esc(nomeCasa(id))}</th>`).join('')}<th class="num">Total</th><th class="col-bar"></th><th class="num">Lançamentos</th><th class="num">vs. mês anterior</th></tr></thead><tbody>
+    ${meses.map(([ym, x], k) => { const ant = meses[k + 1] && meses[k + 1][0] === (() => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); })() ? meses[k + 1][1].v : null;
+      const dif = ant == null ? '—' : `<span style="color:${x.v > ant ? 'var(--bad)' : 'var(--accent)'}">${x.v > ant ? '+' : '−'} ${brl(Math.abs(x.v - ant))}</span>`;
+      return `<tr${S.pd.periodo === 'm:' + ym ? ' style="background:var(--accent-soft)"' : ''}><td><button class="link" data-pd-per="m:${ym}">${esc(nomeMes(ym))}</button></td>${setores.map(id => `<td class="num">${x.set.get(id) ? brl(x.set.get(id)) : '—'}</td>`).join('')}<td class="num"><b>${brl(x.v)}</b></td><td class="col-bar"><div class="barw"><i style="width:${Math.max(2, Math.round(x.v / max * 120))}px;background:var(--bad);opacity:.7"></i></div></td><td class="num">${x.n}</td><td class="num">${dif}</td></tr>`; }).join('')}
+    </tbody></table></div></section>`;
+}
+const pdData = s => s ? s.split('-').reverse().join('/') : '';
+const pdPal = s => semAcento(s).split(/[^a-z0-9]+/).filter(w => w.length > 1 && !PD_STOP.has(w)).map(w => w.replace(/(aes|oes|aos)$/, 'ao')).map(w => w.length > 3 ? w.replace(/s$/, '') : w);
+function pdMotivo(t) { const s = semAcento(t); for (const [re, m] of MOTIVO_RE) if (re.test(s)) return m; return 'Outro'; }
+let pdCalc = new Map();
+const pdC = cid => { if (!pdCalc.has(cid)) pdCalc.set(cid, S.casas[cid] ? calcular(S.casas[cid]) : null); return pdCalc.get(cid); };
+const casasOrd = () => Object.keys(S.casas).sort((a, b) => (S.casas[a].ordem ?? 9) - (S.casas[b].ordem ?? 9));
+const nomeCasa = id => (S.casas[id] && S.casas[id].nome) || id || '—';
+/* Procura o item em todos os setores; empate fica com o setor que tem o nome exato ou aparece primeiro. */
+function pdMelhorItem(txt) {
+  const ws = pdPal(txt); if (!ws.length) return { item: '', casa: '' };
+  let best = '', bc = '', nota = 0;
+  for (const cid of casasOrd()) {
+    const c = S.casas[cid];
+    const cands = [...c.insumos.map(i => i.nome), ...c.fichas.filter(f => !c.insumos.some(i => i.origem && norm(i.origem) === norm(f.nome))).map(f => f.nome)];
+    for (const nome of cands) {
+      const cw = pdPal(nome.replace(/^\*|^receita\s*-\s*/i, '')); if (!cw.length) continue;
+      const bate = w => cw.some(x => x === w || (w.length >= 4 && x.length >= 4 && (x.startsWith(w) || w.startsWith(x))));
+      const comuns = ws.filter(bate).length; if (!comuns) continue;
+      const n = comuns * 2 - (cw.length - comuns) * 0.5 - (ws.length - comuns) * 0.25;
+      if (n > nota + 1e-9) { nota = n; best = nome; bc = cid; }
+    }
+  }
+  return { item: best, casa: bc };
+}
+function pdSetorDo(item, atual) {
+  const k = norm(item); if (!k) return atual || '';
+  const tem = cid => S.casas[cid] && (S.casas[cid].insumos.some(i => norm(i.nome) === k) || S.casas[cid].fichas.some(f => norm(f.nome) === k));
+  if (atual && tem(atual)) return atual;
+  return casasOrd().find(tem) || atual || '';
+}
+function pdUnidade(u) {
+  const s = semAcento(u || '');
+  if (!s) return '';
+  if (/^(kg|kilo|kilos|quilo|quilos)$/.test(s)) return 'kg';
+  if (/^(g|gr|grs|grama|gramas)$/.test(s)) return 'g';
+  if (s === 'mg') return 'mg';
+  if (s === 'ml') return 'ml';
+  if (/^(l|lt|litro|litros)$/.test(s)) return 'L';
+  return 'un';
+}
+function pdLerItem(t) {
+  t = t.trim().replace(/^[-•*]\s*/, ''); if (!t || t.length < 3) return null;
+  const UNRE = '(kg|kilos?|quilos?|gramas?|grs?|g|mg|ml|litros?|lt|l|unidades?|unid|und|un|porç(?:ão|ões|oes|ao)|porcao|porcoes|fatias?|x)';
+  const m = t.match(new RegExp('(\\d+(?:[.,]\\d+)?)\\s*' + UNRE + '(?![a-zà-ú])', 'i')) || t.match(new RegExp('(\\d+(?:[.,]\\d+)?)\\s*' + UNRE + '?(?![a-zà-ú])', 'i'));
+  let qtde = null, unidade = '', resto = t;
+  if (m) { qtde = parseNum(m[1]); if (Number.isNaN(qtde)) qtde = null; unidade = pdUnidade(m[2]); resto = t.slice(0, m.index) + ' ' + t.slice(m.index + m[0].length); }
+  const { item, casa: cid } = pdMelhorItem(resto);
+  if (!unidade) unidade = 'un';
+  return { item, casa: cid, qtde, unidade, motivo: pdMotivo(t), texto: t };
+}
+function pdLerTexto(txt) {
+  const out = [];
+  let data = hoje(), resp = '';
+  const dt = (d, mo, y) => `${y.length === 2 ? '20' + y : y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  for (let l of String(txt).split(/\r?\n/)) {
+    l = l.trim(); if (!l) continue;
+    const HORA = '\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\s*[AaPp]\\.?\\s?[Mm]\\.?)?';
+    const m1 = l.match(new RegExp('^\\[?(\\d{1,2})\\/(\\d{1,2})\\/(\\d{2,4}),?\\s+' + HORA + '\\]?\\s*(?:-\\s*)?([^:]{1,40}):\\s*(.*)$'));
+    const m2 = l.match(new RegExp('^\\[?' + HORA + ',?\\s+(\\d{1,2})\\/(\\d{1,2})\\/(\\d{2,4})\\]?\\s*(?:-\\s*)?([^:]{1,40}):\\s*(.*)$'));
+    const m = m1 || m2;
+    if (m) { data = dt(m[1], m[2], m[3]); resp = m[4].trim(); l = m[5]; }
+    if (/^<?(m[ií]dia oculta|media omitted|imagem omitida|mensagem apagada)/i.test(l)) continue;
+    for (const p of l.split(/;|,(?!\d)|\s+\+\s+|\s+e\s+(?=\d)/)) { const r = pdLerItem(p); if (r && r.qtde != null) out.push({ ...r, data, resp }); }
+  }
+  return out;
+}
+function pdCusto(p) {
+  const C = pdC(p.casa); const k = norm(p.item); if (!C || !k || p.qtde == null) return null;
+  const ins = C.ins.get(k);
+  const f = C.fic.get(k);
+  if (ins) { const q = converter(p.qtde, p.unidade, UN[ins.unidade] || ins.unidade || ''); const u = C.unit(ins.nome); if (q != null && u != null) return q * u; if (!f) return null; }
+  if (f && (!p.unidade || norm(p.unidade) === 'un')) return C.total(f, 'salao') * p.qtde;
+  return null;
+}
+const pdValor = p => p.custo != null ? p.custo : pdCusto(p);
+function pdLista() {
+  const [a, b] = pdPeriodo(S.pd.periodo), st = S.pd.setor || 'Todos';
+  return Object.entries(S.perdas).filter(([, p]) => (st === 'Todos' || p.casa === st) && p.data >= a && p.data <= b).sort(([, x], [, y]) => (y.data || '').localeCompare(x.data || '') || (y.criadoEm || 0) - (x.criadoEm || 0));
+}
+function pdBarras(titulo, mapa) {
+  const l = [...mapa.entries()].sort((a, b) => b[1].v - a[1].v).slice(0, 8);
+  if (!l.length) return '';
+  const max = Math.max(...l.map(x => x[1].v), 0.01);
+  return `<section class="panel pad"><h3 style="margin:0">${titulo}</h3><div class="barras">${l.map(([k, x]) => `<div class="b"><span>${esc(k)} <span class="muted">· ${x.n}×</span></span><b class="val">${brl(x.v)}</b><i style="width:${Math.max(2, Math.round(x.v / max * 100))}%"></i></div>`).join('')}</div></section>`;
+}
+function pdAgrupar(l, fn) { const m = new Map(); for (const [, p] of l) { const k = fn(p) || '—'; const x = m.get(k) || { v: 0, n: 0 }; x.v += pdValor(p) || 0; x.n++; m.set(k, x); } return m; }
+function pdResumoTexto() {
+  const l = pdLista(), tot = l.reduce((s, [, p]) => s + (pdValor(p) || 0), 0);
+  const per = pdNomePer(S.pd.periodo), st = S.pd.setor && S.pd.setor !== 'Todos' ? ' · ' + nomeCasa(S.pd.setor) : '';
+  const porSetor = pdAgrupar(l, p => nomeCasa(p.casa)), porItem = pdAgrupar(l, p => p.item || p.texto);
+  return [`Erros e perdas da cozinha${st} (${per}): ${brl(tot)} em ${l.length} lançamentos`,
+    ...(st ? [] : [...porSetor.entries()].sort((a, b) => b[1].v - a[1].v).map(([k, x]) => `${k}: ${brl(x.v)}`)), '',
+    'Maiores perdas:', ...[...porItem.entries()].sort((a, b) => b[1].v - a[1].v).slice(0, 10).map(([k, x]) => `- ${k}: ${brl(x.v)}`)].join('\n');
+}
+function renderPerdas() {
+  pdCalc = new Map();
+  const P = S.pd, prev = P.previa || [], ids = casasOrd();
+  const linhasPrev = prev.map((r, k) => { const v = pdCusto(r); return `<tr>
+      <td class="w-d"><input type="date" id="pv-${k}-d" data-pv="data" data-k="${k}" value="${esc(r.data)}" aria-label="Data"></td>
+      <td class="w-n"><input type="text" id="pv-${k}-i" list="dl-pd" data-pv="item" data-k="${k}" value="${esc(r.item)}" placeholder="escolha o item" aria-label="Item">${r.texto ? `<span class="sub">“${esc(r.texto)}”</span>` : ''}</td>
+      <td class="w-u"><select id="pv-${k}-s" data-pv="casa" data-k="${k}" aria-label="Setor">${r.casa ? '' : '<option value="">—</option>'}${ids.map(id => `<option value="${esc(id)}"${id === r.casa ? ' selected' : ''}>${esc(nomeCasa(id))}</option>`).join('')}</select></td>
+      <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="pv-${k}-q" data-pv="qtde" data-k="${k}" value="${esc(numTxt(r.qtde))}" aria-label="Quantidade"></td>
+      <td style="width:76px"><input type="text" id="pv-${k}-u" list="dl-pdun" data-pv="unidade" data-k="${k}" value="${esc(r.unidade)}" aria-label="Unidade"></td>
+      <td class="w-u"><select id="pv-${k}-m" data-pv="motivo" data-k="${k}" aria-label="Motivo">${MOTIVOS.map(m => `<option${m === r.motivo ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select></td>
+      <td class="w-u"><input type="text" id="pv-${k}-r" list="dl-pdresp" data-pv="resp" data-k="${k}" value="${esc(r.resp)}" placeholder="quem" aria-label="Responsável"></td>
+      <td class="num">${v == null ? `<span class="tag warn">${!r.item ? 'sem item' : r.qtde == null ? 'sem quantidade' : !r.casa ? 'sem setor' : 'unidade não bate'}</span>` : `<b>${brl(v)}</b>`}</td>
+      <td><button class="ghost" data-pv-rm="${k}" aria-label="Tirar linha">×</button></td></tr>`; }).join('');
+  const totPrev = prev.reduce((s, r) => s + (pdCusto(r) || 0), 0);
+  const l = pdLista();
+  const tot = l.reduce((s, [, p]) => s + (pdValor(p) || 0), 0);
+  const semCusto = l.filter(([, p]) => pdValor(p) == null).length;
+  const porSetor = pdAgrupar(l, p => nomeCasa(p.casa)), porItem = pdAgrupar(l, p => p.item || p.texto), porMotivo = pdAgrupar(l, p => p.motivo), porResp = pdAgrupar(l, p => p.resp);
+  const maior = [...porItem.entries()].sort((a, b) => b[1].v - a[1].v)[0];
+  const setor = P.setor || 'Todos';
+  return `<div class="perdas">
+    <section class="panel pad pd-novo" aria-labelledby="t-pd">
+      <h2 id="t-pd">Lançar erros e perdas da cozinha</h2>
+      <p class="muted">Cole as mensagens do grupo do WhatsApp do jeito que vêm, com data e nome. A página acha cada item em qualquer setor (${ids.map(nomeCasa).map(esc).join(', ')}), a quantidade e o motivo, e calcula o prejuízo pelo custo atual. Confira a prévia antes de lançar.</p>
+      <textarea id="pd-texto" rows="4" placeholder="[9:41 PM, 03/11/2026] Ana: 1 pão quebrou&#10;5 nuggets queimaram&#10;180g de cebola caramelizada estragaram">${esc(P.texto)}</textarea>
+      <div class="actions"><button class="ghost solid" data-pd-ler>Ler mensagens</button><button class="ghost" data-pd-mao>Adicionar à mão</button>${prev.length ? '<button class="ghost" data-pd-limpar>Limpar prévia</button>' : ''}</div>
+      ${prev.length ? `<div class="tbl"><table><thead><tr><th>Data</th><th>Item</th><th>Setor</th><th class="num">Qtde</th><th>Un.</th><th>Motivo</th><th>Quem</th><th class="num">Prejuízo</th><th></th></tr></thead><tbody>${linhasPrev}</tbody>
+        <tfoot><tr><td colspan="7">Total da prévia</td><td class="num">${brl(totPrev)}</td><td></td></tr></tfoot></table></div>
+        <div class="actions"><button class="ghost solid" data-pd-lancar>Lançar ${prev.length} ${prev.length === 1 ? 'item' : 'itens'}</button><span class="muted">O prejuízo fica guardado com o custo de hoje.</span></div>` : ''}
+    </section>
+    <section class="panel pad">
+      <div class="actions" style="justify-content:space-between"><div class="chips" style="align-items:center">${PD_PER.map(([k, n]) => `<button class="chip" data-pd-per="${k}" aria-pressed="${P.periodo === k}">${n}</button>`).join('')}${(() => { const ms = [...new Set(Object.values(S.perdas).map(p => (p.data || '').slice(0, 7)).filter(x => /^\d{4}-\d{2}$/.test(x)))].sort().reverse(); return ms.length ? `<select id="pd-mes" aria-label="Escolher mês" style="width:auto;padding:1px 6px;font-size:12.5px"><option value="">Escolher mês…</option>${ms.map(m => `<option value="m:${m}"${P.periodo === 'm:' + m ? ' selected' : ''}>${esc(nomeMes(m))}</option>`).join('')}</select>` : ''; })()}</div>${l.length ? '<button class="ghost" data-pd-copiar>Copiar resumo para o grupo</button>' : ''}</div>
+      <div class="chips">${['Todos', ...ids].map(id => `<button class="chip" data-pd-setor="${esc(id)}" aria-pressed="${setor === id}">${id === 'Todos' ? 'Toda a cozinha' : esc(nomeCasa(id))}</button>`).join('')}</div>
+      <div class="kpis">
+        <div class="kpi"><span>Prejuízo · ${esc(pdNomePer(P.periodo))}</span><b style="color:var(--bad)">${brl(tot)}</b></div>
+        <div class="kpi"><span>Lançamentos</span><b>${l.length}</b></div>
+        <div class="kpi"><span>Maior perda</span><b style="font-size:16px">${maior ? esc(maior[0]) + ' · ' + brl(maior[1].v) : '—'}</b></div>
+        ${semCusto ? `<div class="kpi"><span>Sem custo calculado</span><b style="color:var(--warn)">${semCusto}</b></div>` : ''}
+      </div>
+    </section>
+    ${pdBlocoMeses()}
+    ${l.length ? `<div class="grid2">${setor === 'Todos' ? pdBarras('Por setor', porSetor) : ''}${pdBarras('Por item', porItem)}${pdBarras('Por motivo', porMotivo)}${pdBarras('Por pessoa', porResp)}</div>` : ''}
+    <section class="panel pad">
+      <h3 style="margin:0">Lançamentos</h3>
+      <div class="tbl"><table><thead><tr><th>Data</th><th>Item</th><th>Setor</th><th class="num">Qtde</th><th>Motivo</th><th>Quem</th><th class="num">Prejuízo</th><th></th></tr></thead><tbody>
+      ${l.map(([id, p]) => { const v = pdValor(p); return `<tr><td>${esc(pdData(p.data))}</td><td>${esc(p.item || '—')}${p.texto ? `<span class="sub">“${esc(p.texto)}”</span>` : ''}</td><td>${esc(nomeCasa(p.casa))}</td><td class="num">${p.qtde == null ? '—' : esc(nf(0, 3).format(p.qtde) + ' ' + (p.unidade || ''))}</td><td>${esc(p.motivo)}</td><td>${esc(p.resp || '—')}</td><td class="num">${v == null ? '<span class="tag warn">sem custo</span>' : brl(v)}</td>
+        <td style="white-space:nowrap">${S.confirmar === 'pd:' + id ? `<button class="ghost danger" data-pd-del="${esc(id)}">Apagar</button> <button class="ghost" data-cancelar>Não</button>` : `<button class="ghost" data-pede-del="pd:${esc(id)}" aria-label="Apagar lançamento">×</button>`}</td></tr>`; }).join('') || `<tr><td colspan="8" class="muted">Nenhum lançamento neste período. Cole as mensagens do grupo acima para começar.</td></tr>`}
+      </tbody>${l.length ? `<tfoot><tr><td colspan="6">Total</td><td class="num">${brl(tot)}</td><td></td></tr></tfoot>` : ''}</table></div>
+    </section>
+  </div>`;
+}
+function render() {
+  const c = casa();
+  if (!c) { renderHeader(null); if (S.vazioPronto && !S.soLeitura) $('view').innerHTML = boasVindas(); return; }
+  const C = calcular(c), A = alertas(c, C);
+  renderHeader(A);
+  $('dl-insumos').innerHTML = c.insumos.map(i => `<option value="${esc(i.nome)}">`).join('');
+  $('dl-fichas').innerHTML = c.fichas.map(f => `<option value="${esc(f.nome)}">`).join('');
+  $('dl-grupos').innerHTML = [...new Set(c.insumos.map(i => i.grupo).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join('');
+  $('dl-unidades').innerHTML = [...new Set(c.insumos.map(i => i.unidade).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join('');
+  $('dl-reccat').innerHTML = [...new Set(['Molhos', 'Pães e massas', 'Carnes', 'Coberturas', 'Sobremesas', ...Object.values(S.receitas).map(r => r.categoria).filter(Boolean)])].map(g => `<option value="${esc(g)}">`).join('');
+  $('dl-unrec').innerHTML = [...new Set([...UN_REC, ...Object.values(S.receitas).flatMap(r => (r.ingredientes || []).map(i => i.unidade)).filter(Boolean)])].map(g => `<option value="${esc(g)}">`).join('');
+  if (S.view === 'receitas' && !S.receitas[S.rec]) { const p = recOrdenadas()[0]; S.rec = p ? p[0] : null; }
+  if (!$('dl-pd')) document.body.insertAdjacentHTML('beforeend', '<datalist id="dl-pd"></datalist><datalist id="dl-pdun"><option value="g"><option value="kg"><option value="ml"><option value="L"><option value="un"></datalist><datalist id="dl-pdresp"></datalist>');
+  $('dl-pd').innerHTML = [...new Set(Object.values(S.casas).flatMap(x => [...x.insumos.map(i => i.nome), ...x.fichas.map(f => f.nome)]))].map(n => `<option value="${esc(n)}">`).join('');
+  $('dl-pdresp').innerHTML = [...new Set(Object.values(S.perdas).map(p => p.resp).filter(Boolean))].map(n => `<option value="${esc(n)}">`).join('');
+  const lista = $('lista') || $('listaRec'), topo = lista ? lista.scrollTop : 0;
+  $('view').innerHTML = (S.aviso ? `<p class="aviso" role="status">${S.aviso}</p>` : '') + (S.modoPerdas ? renderPerdas() : S.view === 'insumos' ? renderInsumos(c, C) : S.view === 'receitas' ? renderReceitas(c, C) : S.view === 'especiais' ? renderEspeciais(c, C) : S.view === 'delivery' ? renderDelivery(c, C) : S.view === 'alertas' ? renderAlertas(A) : S.view === 'multiplicar' ? renderMultiplicar(c, C) : renderFichas(c, C));
+  const nova = $('lista') || $('listaRec'); if (nova) nova.scrollTop = topo;
+  if (S.soLeitura) $('view').querySelectorAll('input:not([type="search"]):not(#rec-escala), select:not(#ordem), textarea').forEach(el => { el.disabled = true; });
+}
+
+/* ---------- Ações ---------- */
+function abrir(nome, canal, guardar) {
+  if (guardar && S.view === 'fichas' && S.ficha && S.ficha !== nome) S.hist.push(S.ficha); else if (!guardar) S.hist = [];
+  S.ficha = nome; S.canal = canal || S.canal; S.view = 'fichas'; S.confirmar = null; render();
+  const d = $('detalhe'); if (d && matchMedia('(max-width: 860px)').matches) d.scrollIntoView(); else scrollTo(0, 0);
+}
+function nomeLivre(lista, base) { let n = base, k = 2; while (lista.some(x => norm(x.nome) === norm(n))) n = base + ' ' + k++; return n; }
+function precoFixo(c, nome) { const C = calcular(c); for (const i of c.insumos) if (i.origem && norm(i.origem) === norm(nome)) { i.preco = C.preco(i); i.origem = null; } }
+function tirarFicha(c, nome) { const k = c.fichas.findIndex(x => x.nome === nome); if (k < 0) return false; precoFixo(c, nome); c.fichas.splice(k, 1); if (S.ficha === nome) S.ficha = (c.fichas[k] || c.fichas[k - 1] || {}).nome; S.hist = []; }
+function executarMover(acao, alvo) {
+  const oId = S.casa, o = casa();
+  if (acao === 'cat') {
+    const f = fichaAtual(o); mudar(c => { fichaAtual(c).categoria = alvo; });
+    S.aviso = `“${esc(f.nome)}” agora está em ${esc(alvo)}.${alvo === 'Especiais' ? ' <button class="link" data-view="especiais">Ver na aba Especiais</button>' : ''}`;
+  } else if (acao === 'rec-copiar' || acao === 'rec-mover') {
+    const f = fichaAtual(o), C = calcular(o), id = novoId(), manter = acao === 'rec-copiar';
+    const gerado = o.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
+    const r = { nome: nomeLivre(Object.values(S.receitas), f.nome), categoria: f.categoria, rendimento: gerado ? { qtde: gerado.embalagem ?? null, unidade: UN[gerado.unidade] || gerado.unidade || '' } : { qtde: null, unidade: '' }, tempo: '', validade: '', armazenamento: '',
+      ingredientes: (f.salao || []).filter(i => norm(i.nome)).map(i => { const ins = C.ins.get(norm(i.nome)); return { nome: i.nome, qtde: i.qtde, unidade: ins ? (UN[ins.unidade] || ins.unidade || '') : '', obs: '' }; }),
+      passos: [''], obs: f.notas || '', ficha: manter ? f.nome : null, casa: S.casa, criado: hoje() };
+    mudarRec(id, () => { S.receitas[id] = r; });
+    if (!manter) mudar(c => tirarFicha(c, f.nome));
+    S.aviso = `Receita “${esc(r.nome)}” criada${manter ? ', ligada a esta ficha' : ''}. <button class="link" data-ir-rec="${esc(id)}">Abrir na aba Receitas</button>`;
+  } else if (acao === 'casa-copiar' || acao === 'casa-mover') {
+    const f = fichaAtual(o), Co = calcular(o), copia = JSON.parse(JSON.stringify(f)), dz = S.casas[alvo];
+    mudar(d => {
+      copia.nome = nomeLivre(d.fichas, f.nome);
+      const tem = new Set(d.insumos.map(i => norm(i.nome))), temF = new Set(d.fichas.map(x => norm(x.nome)));
+      for (const it of (f.salao || []).concat(f.delivery || [])) {
+        const k = norm(it.nome), i = k && !tem.has(k) && Co.ins.get(k); if (!i) continue;
+        const ni = JSON.parse(JSON.stringify(i)); if (ni.origem && !temF.has(norm(ni.origem))) { ni.preco = Co.preco(i); ni.origem = null; }
+        d.insumos.push(ni); tem.add(k);
+      }
+      for (const i of o.insumos) if (i.origem && norm(i.origem) === norm(f.nome) && !tem.has(norm(i.nome))) { d.insumos.push({ ...JSON.parse(JSON.stringify(i)), origem: copia.nome }); tem.add(norm(i.nome)); }
+      if (copia.delivery == null && d.fichas.some(x => x.delivery)) copia.delivery = JSON.parse(JSON.stringify(copia.salao || []));
+      d.fichas.push(copia);
+    }, alvo);
+    if (acao === 'casa-mover') mudar(c => tirarFicha(c, f.nome), oId);
+    S.aviso = `“${esc(f.nome)}” ${acao === 'casa-mover' ? 'movida' : 'copiada'} para ${esc(dz.nome)}${copia.nome !== f.nome ? ` com o nome “${esc(copia.nome)}”` : ''}. <button class="link" data-ir-casa="${esc(alvo)}" data-ir-ficha="${esc(copia.nome)}">Abrir em ${esc(dz.nome)}</button>`;
+  } else if (acao === 'rcat') {
+    mudarRec(S.rec, r => { r.categoria = alvo; });
+    S.aviso = `Receita movida para ${esc(alvo)}.`;
+  } else if (acao === 'fic-copiar' || acao === 'fic-mover') {
+    const rid = S.rec, r = S.receitas[rid], dz = S.casas[alvo]; let nome;
+    mudar(d => {
+      nome = nomeLivre(d.fichas, r.nome);
+      const salao = (r.ingredientes || []).filter(i => norm(i.nome)).map(i => ({ nome: i.nome, qtde: i.qtde }));
+      d.fichas.push({ nome, categoria: 'Preparos base', margem: null, notas: r.obs || '', salao, delivery: d.fichas.some(x => x.delivery) ? JSON.parse(JSON.stringify(salao)) : null });
+    }, alvo);
+    if (acao === 'fic-mover') { mudarRec(rid, () => { delete S.receitas[rid]; }); S.rec = null; }
+    else if (!r.ficha) mudarRec(rid, x => { x.ficha = nome; x.casa = alvo; });
+    S.aviso = `“${esc(r.nome)}” ${acao === 'fic-mover' ? 'movida' : 'copiada'} para as fichas de ${esc(dz.nome)} (Preparos base). <button class="link" data-ir-casa="${esc(alvo)}" data-ir-ficha="${esc(nome)}">Abrir a ficha</button>`;
+  }
+  S.mover = false; S.moverConf = null;
+}
+function cadastrarEspecial() {
+  const F = S.espForm, nome = F.nome.trim();
+  if (!nome) { avisar('Dê um nome ao especial para cadastrar.'); return; }
+  const c = casa();
+  if (c.fichas.some(x => norm(x.nome) === norm(nome))) { avisar('Já existe uma ficha chamada "' + nome + '".'); return; }
+  const preco = parseNum(F.preco);
+  if (Number.isNaN(preco)) { avisar('Preço inválido: "' + F.preco + '". Use, por exemplo, 39,90.'); return; }
+  if (F.inicio && F.fim && F.fim < F.inicio) { avisar('A data final vem antes da data de início.'); return; }
+  mudar(c => {
+    const temDel = c.fichas.some(f => f.delivery), base = F.base && c.fichas.find(f => f.nome === F.base);
+    const copia = v => JSON.parse(JSON.stringify(v));
+    const k = c.fichas.findIndex(f => f.categoria === 'Especiais');
+    const nova = { nome, categoria: 'Especiais', tipo: F.tipo, preco, inicio: F.inicio || null, fim: F.fim || null, descricao: F.desc.trim(), margem: base ? base.margem ?? null : null, notas: '',
+      salao: base ? copia(base.salao || []) : [], delivery: base && base.delivery ? copia(base.delivery) : temDel ? [] : null };
+    c.fichas.splice(k < 0 ? 0 : k, 0, nova);
+    S.espForm = { tipo: F.tipo, nome: '', preco: '', inicio: '', fim: '', base: '', desc: '' };
+    S.ficha = nome; S.canal = 'salao'; S.busca = ''; S.cat = 'Todas'; S.hist = []; S.view = 'fichas';
+  });
+  setTimeout(() => { scrollTo(0, 0); const el = $('add-item'); if (el) el.focus(); }, 10);
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  const d = t.dataset;
+  if (!t.classList.contains('handle')) S.aviso = null;
+  if (d.casaNova !== undefined) { S.casaForm = 'nova'; S.casaExcluir = false; render(); setTimeout(() => { const el = $('casa-nome'); if (el) el.focus(); }, 10); return; }
+  if (d.casaEditar !== undefined) { S.casaForm = 'editar'; S.casaExcluir = false; render(); return; }
+  if (d.casaCancel !== undefined) { S.casaForm = null; S.casaExcluir = false; render(); return; }
+  if (d.casaCriar !== undefined) { criarCasa(); return; }
+  if (d.casaRenomear !== undefined) { const v = (($('casa-renome') || {}).value || '').trim(); if (!v) { estado('Escreva o nome da casa.', true); return; } S.casaForm = null; mudar(c => { c.nome = v; }); return; }
+  if (d.casaExcluir !== undefined) { if (!S.casaExcluir) { S.casaExcluir = true; render(); return; } excluirCasa(); return; }
+  if (d.casa) { S.casaForm = null; S.casaExcluir = false; }
+  if (d.ficha !== undefined || d.rec !== undefined || d.view || d.casa || t.id === 'desfazer') { S.mover = false; S.moverConf = null; }
+  if (d.mover !== undefined) { S.mover = !S.mover; S.moverConf = null; render(); return; }
+  if (d.moverFechar !== undefined) { S.mover = false; S.moverConf = null; render(); return; }
+  if (d.mvCancel !== undefined) { S.moverConf = null; render(); return; }
+  if (d.mv) {
+    const chave = d.mv + '|' + d.alvo;
+    if (['rec-mover', 'casa-mover', 'fic-mover'].includes(d.mv) && S.moverConf !== chave) { S.moverConf = chave; render(); return; }
+    executarMover(d.mv, d.alvo); render(); return;
+  }
+  if (d.irCasa) { S.casa = d.irCasa; S.view = 'fichas'; S.busca = ''; S.cat = 'Todas'; abrir(d.irFicha, 'salao', false); return; }
+  if (d.irRec) { S.view = 'receitas'; S.rec = d.irRec; S.recModo = 'editar'; S.recEscala = 1; render(); scrollTo(0, 0); return; }
+  if (d.espMover) { S.mover = true; abrir(d.espMover, 'salao', false); S.mover = true; render(); return; }
+  if (d.espDel) { const n = d.espDel; S.confirmar = null; mudar(c => tirarFicha(c, n)); S.aviso = `“${esc(n)}” foi excluído. Se foi sem querer, clique em Desfazer.`; return; }
+  if (d.pdLer !== undefined) {
+    const txt = ($('pd-texto') || {}).value || ''; S.pd.texto = txt;
+    const novos = pdLerTexto(txt);
+    if (!novos.length) { avisar('Não achei nenhum item nas mensagens. Escreva a quantidade e o item, por exemplo “180g de cebola caramelizada”.'); return; }
+    S.pd.previa = S.pd.previa.concat(novos); S.pd.texto = ''; estado(novos.length + (novos.length === 1 ? ' item lido' : ' itens lidos') + '. Confira a prévia e clique em Lançar.'); render(); return;
+  }
+  if (d.pdMao !== undefined) { S.pd.texto = ($('pd-texto') || {}).value || ''; S.pd.previa.push({ data: hoje(), item: '', casa: '', qtde: null, unidade: 'g', motivo: 'Estragou', resp: '', texto: '' }); render(); setTimeout(() => { const el = $('pv-' + (S.pd.previa.length - 1) + '-i'); if (el) el.focus(); }, 10); return; }
+  if (d.pdLimpar !== undefined) { S.pd.previa = []; render(); return; }
+  if (d.pvRm !== undefined) { S.pd.previa.splice(+d.pvRm, 1); render(); return; }
+  if (d.pdPer) { S.pd.periodo = d.pdPer; render(); return; }
+  if (d.pdSetor) { S.pd.setor = d.pdSetor; render(); return; }
+  if (d.perdasGeral !== undefined) { S.modoPerdas = true; S.confirmar = null; render(); scrollTo(0, 0); return; }
+  if (d.casa) S.modoPerdas = false;
+  if (d.pdLancar !== undefined) {
+    if (S.soLeitura) { estado('Somente visualização: só quem tem acesso de editor pode lançar.', true); return; }
+    const prev = S.pd.previa; pdCalc = new Map();
+    const ruim = prev.findIndex(r => !norm(r.item) || r.qtde == null || !r.casa);
+    if (ruim >= 0) { avisar('A linha ' + (ruim + 1) + ' está sem item, sem setor ou sem quantidade. Corrija ou tire a linha antes de lançar.'); return; }
+    let n = 0;
+    for (const r of prev) {
+      const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), v = pdCusto(r);
+      S.perdas[id] = { casa: r.casa, data: r.data || hoje(), item: r.item, qtde: r.qtde, unidade: r.unidade || '', motivo: r.motivo || 'Outro', resp: r.resp || '', texto: r.texto || '', custo: v == null ? null : Math.round(v * 100) / 100, criadoEm: Date.now() };
+      agendarSalvar('perdas/' + id); n++;
+    }
+    S.pd.previa = []; S.aviso = `${n} ${n === 1 ? 'lançamento salvo' : 'lançamentos salvos'}.`; render(); return;
+  }
+  if (d.pdDel) { S.confirmar = null; delete S.perdas[d.pdDel]; agendarSalvar('perdas/' + d.pdDel); render(); return; }
+  if (d.pdCopiar !== undefined) {
+    const txt = pdResumoTexto();
+    const falhou = () => estado('Não consegui copiar. Selecione os números e copie com Ctrl+C.', true);
+    try { navigator.clipboard.writeText(txt).then(() => estado('Resumo copiado. É só colar no grupo.'), falhou); } catch (_) { falhou(); }
+    return;
+  }
+  if (t.id === 'desfazer' && S.view === 'receitas') {
+    const p = S.undo.rec; if (!p || !p.length) return;
+    const u = p.pop();
+    for (const x of u.itens) { if (x.corpo == null) delete S.receitas[x.id]; else S.receitas[x.id] = JSON.parse(x.corpo); agendarSalvar('receitas/' + x.id); }
+    for (const x of u.itens) recParaFicha(x.id);
+    S.rec = S.receitas[u.rec] ? u.rec : (u.itens.find(x => S.receitas[x.id]) || {}).id || null; S.confirmar = null; render();
+  }
+  else if (t.id === 'desfazer') {
+    const p = S.undo[S.casa]; if (!p || !p.length) return;
+    const u = p.pop(); S.casas[S.casa] = JSON.parse(u.corpo); S.ficha = u.ficha; S.hist = []; S.confirmar = null; agendarSalvar('casas/' + S.casa); fichaParaRecs(S.casa); render();
+  }
+  else if (d.rec !== undefined) { S.rec = d.rec; S.recModo = 'ler'; S.recEscala = 1; S.confirmar = null; render(); const el = $('detalhe'); if (el && matchMedia('(max-width: 860px)').matches) el.scrollIntoView(); }
+  else if (d.recModo) { S.recModo = d.recModo; render(); }
+  else if (d.recCat) { S.recCat = d.recCat; render(); }
+  else if (d.escala) { S.recEscala = +d.escala; render(); }
+  else if (d.recNova !== undefined) {
+    const id = novoId(), nomes = Object.values(S.receitas);
+    mudarRec(id, () => { S.receitas[id] = { nome: nomeLivre(nomes, 'Nova receita'), categoria: S.recCat !== 'Todas' && S.recCat !== 'Sem categoria' ? S.recCat : '', rendimento: { qtde: null, unidade: '' }, tempo: '', validade: '', armazenamento: '', ingredientes: [], passos: [''], obs: '', ficha: null, criado: hoje() }; });
+    S.rec = id; S.recModo = 'editar'; S.recEscala = 1; S.recBusca = '';
+    setTimeout(() => { const el = $('rec-nome'); if (el) { el.focus(); el.select(); } }, 10);
+  }
+  else if (d.recDup !== undefined) { const id = novoId(), r = S.receitas[S.rec]; mudarRec(id, () => { const nv = JSON.parse(JSON.stringify(r)); nv.nome = nomeLivre(Object.values(S.receitas), r.nome + ' (cópia)'); nv.criado = hoje(); S.receitas[id] = nv; }); S.rec = id; S.recModo = 'editar'; }
+  else if (d.recDel !== undefined) { const id = S.rec; S.confirmar = null; mudarRec(id, () => { delete S.receitas[id]; }); S.rec = null; }
+  else if (d.recAddIng !== undefined) mudarRec(S.rec, r => { r.ingredientes.push({ nome: '', qtde: null, unidade: '', obs: '' }); setTimeout(() => { const el = $('ri-' + (r.ingredientes.length - 1) + '-n'); if (el) el.focus(); }, 10); });
+  else if (d.recRmIng !== undefined) mudarRec(S.rec, r => { r.ingredientes.splice(+d.recRmIng, 1); });
+  else if (d.recPuxar !== undefined) { const c = casa(), C = calcular(c); mudarRec(S.rec, r => {
+    const cu = custoReceita(r, c, C); if (!cu || !cu.f) return false;
+    const ja = new Set(r.ingredientes.map(i => norm(i.nome)));
+    for (const it of cu.f.salao || []) if (norm(it.nome) && !ja.has(norm(it.nome))) { const ins = cu.CC.ins.get(norm(it.nome)); r.ingredientes.push({ nome: it.nome, qtde: it.qtde, unidade: ins ? (UN[ins.unidade] || ins.unidade || '') : '', obs: '' }); }
+  }); }
+  else if (d.recAddPasso !== undefined) mudarRec(S.rec, r => { r.passos.push(''); setTimeout(() => { const el = $('rp-' + (r.passos.length - 1)); if (el) el.focus(); }, 10); });
+  else if (d.recRmPasso !== undefined) mudarRec(S.rec, r => { r.passos.splice(+d.recRmPasso, 1); });
+  else if (d.recUp !== undefined || d.recDown !== undefined) mudarRec(S.rec, r => { const k = +(d.recUp ?? d.recDown), j = d.recUp !== undefined ? k - 1 : k + 1; if (j < 0 || j >= r.passos.length) return false; [r.passos[k], r.passos[j]] = [r.passos[j], r.passos[k]]; });
+  else if (d.multFator) { S.mult.fator = +d.multFator; if ($('status').classList.contains('err')) estado(''); render(); }
+  else if (d.multCanal) { S.mult.canal = d.multCanal; render(); }
+  else if (d.multSub) { S.mult.hist.push({ ficha: S.mult.ficha, fator: S.mult.fator, canal: S.mult.canal }); S.mult.ficha = d.multSub; S.mult.fator = +d.multF > 0 ? +d.multF : 1; S.mult.canal = 'salao'; render(); scrollTo(0, 0); }
+  else if (d.multVoltar !== undefined) { const h = S.mult.hist.pop(); if (h) { S.mult.ficha = h.ficha; S.mult.fator = h.fator; S.mult.canal = h.canal; } render(); }
+  else if (d.multCopiar !== undefined) {
+    const txt = textoMult(casa(), calcular(casa()));
+    const falhou = () => estado('Não consegui copiar. Selecione a tabela e copie com Ctrl+C.', true);
+    try { navigator.clipboard.writeText(txt).then(() => estado('Lista copiada'), falhou); } catch (_) { falhou(); }
+  }
+  else if (d.casa) { S.casa = d.casa; const c = casa(); S.ficha = c.fichas[0] && c.fichas[0].nome; S.hist = []; S.canal = 'salao'; S.busca = ''; S.cat = 'Todas'; S.insBusca = ''; S.insGrupo = 'Todos'; S.confirmar = null; if (S.view === 'delivery' && !c.fichas.some(f => f.delivery)) S.view = 'fichas'; render(); }
+  else if (d.view) { S.view = d.view; S.confirmar = null; render(); scrollTo(0, 0); }
+  else if (d.ficha !== undefined) abrir(d.ficha, null, false);
+  else if (d.abrir !== undefined) abrir(d.abrir, 'salao', true);
+  else if (d.abrirDel !== undefined) abrir(d.abrirDel, 'delivery', true);
+  else if (d.voltar !== undefined) { S.ficha = S.hist.pop(); render(); }
+  else if (d.canal) { S.canal = d.canal; render(); }
+  else if (d.cat) { S.cat = d.cat; render(); }
+  else if (d.grupo) { S.insGrupo = d.grupo; render(); }
+  else if (d.espTipo) { S.espForm.tipo = d.espTipo; render(); }
+  else if (d.espF) { S.espTipo = d.espF; render(); }
+  else if (d.espS) { S.espSit = d.espS; render(); }
+  else if (d.cadEsp !== undefined) cadastrarEspecial();
+  else if (d.ord) { S.insOrd = d.ord === '_' ? ['_', 1] : [d.ord, S.insOrd[0] === d.ord ? -S.insOrd[1] : 1]; render(); }
+  else if (d.usos) { S.insAberto = S.insAberto === d.usos ? null : d.usos; render(); }
+  else if (d.cancelar !== undefined) { S.confirmar = null; render(); }
+  else if (d.pedeDel) { S.confirmar = d.pedeDel; render(); }
+  else if (d.addItem !== undefined) mudar(c => { fichaAtual(c)[canalAtual(c)].push({ nome: '', qtde: null }); });
+  else if (d.rm !== undefined) mudar(c => { fichaAtual(c)[canalAtual(c)].splice(+d.rm, 1); });
+  else if (d.criarDel !== undefined) mudar(c => { const f = fichaAtual(c); f.delivery = JSON.parse(JSON.stringify(f.salao)); S.canal = 'delivery'; });
+  else if (d.novaFicha !== undefined) mudar(c => {
+    const temDel = c.fichas.some(f => f.delivery), nome = nomeLivre(c.fichas, 'Nova ficha');
+    c.fichas.unshift({ nome, categoria: S.cat !== 'Todas' ? S.cat : 'Itens de venda', margem: null, notas: '', salao: [], delivery: temDel ? [] : null });
+    S.ficha = nome; S.canal = 'salao'; S.busca = ''; S.hist = [];
+  });
+  else if (d.dup !== undefined) mudar(c => { const f = fichaAtual(c), nome = nomeLivre(c.fichas, f.nome + ' (cópia)'); const nv = JSON.parse(JSON.stringify(f)); nv.nome = nome; c.fichas.splice(c.fichas.indexOf(f) + 1, 0, nv); S.ficha = nome; });
+  else if (d.delFicha !== undefined) { S.confirmar = null; mudar(c => {
+    const f = fichaAtual(c), k = c.fichas.indexOf(f);
+    c.fichas.splice(k, 1);
+    for (const i of c.insumos) if (i.origem && norm(i.origem) === norm(f.nome)) { i.preco = null; i.origem = null; }
+    S.ficha = (c.fichas[k] || c.fichas[k - 1] || {}).nome; S.hist = [];
+  }); }
+  else if (d.novoIns !== undefined) mudar(c => { const nome = nomeLivre(c.insumos, 'Novo insumo'); c.insumos.unshift({ nome, grupo: 'Ingredientes', embalagem: 1000, unidade: 'Gramas', preco: null, fator: null, origem: null }); S.insBusca = ''; S.insGrupo = 'Todos'; S.insOrd = ['_', 1]; });
+  else if (d.delIns !== undefined) { S.confirmar = null; mudar(c => { c.insumos.splice(+d.delIns, 1); }); }
+});
+const fichaAtual = c => c.fichas.find(f => f.nome === S.ficha);
+const canalAtual = c => S.canal === 'delivery' && fichaAtual(c).delivery && temCompar(fichaAtual(c)) ? 'delivery' : 'salao';
+function renomearInsumo(c, antes, novo) { for (const f of c.fichas) for (const can of ['salao', 'delivery']) for (const it of f[can] || []) if (norm(it.nome) === norm(antes)) it.nome = novo; }
+document.addEventListener('change', e => {
+  const t = e.target, d = t.dataset;
+  if (t.id === 'ordem') { S.ordem = t.value; $('lista').innerHTML = linhasLista(casa(), calcular(casa())); return; }
+  if (t.id === 'rec-escala') { const n = parseNum(t.value); if (n == null) return; if (Number.isNaN(n) || n <= 0) { avisar('Use um número maior que zero, por exemplo 1,5.'); return; } S.recEscala = n; render(); return; }
+  if (d.pv) {
+    const r = S.pd.previa[+d.k]; if (!r) return;
+    if (d.pv === 'qtde') { const n = parseNum(t.value); if (Number.isNaN(n)) { avisar('Número inválido: "' + t.value + '". Use, por exemplo, 180 ou 1,5.'); return; } r.qtde = n; }
+    else if (d.pv === 'item') { r.item = t.value.trim(); r.casa = pdSetorDo(r.item, r.casa); }
+    else r[d.pv] = t.value.trim();
+    render(); return;
+  }
+  if (t.id === 'pd-mes') { if (t.value) { S.pd.periodo = t.value; render(); } return; }
+  if (t.id === 'mult-ficha') { S.mult.ficha = t.value; S.mult.fator = 1; S.mult.hist = []; S.mult.canal = 'salao'; render(); return; }
+  if (t.id === 'mult-fator' || t.id === 'mult-alvo') {
+    const n = parseNum(t.value); if (n == null) return;
+    if (Number.isNaN(n) || n <= 0) { avisar('Use um número maior que zero, por exemplo 2,5.'); return; }
+    if ($('status').classList.contains('err')) estado('');
+    if (t.id === 'mult-fator') S.mult.fator = n;
+    else { const g = casa().insumos.find(i => i.origem && norm(i.origem) === norm(S.mult.ficha)); if (!g || !g.embalagem) return; S.mult.fator = n / g.embalagem; }
+    render(); return;
+  }
+  if (d.r || d.ri || d.rp !== undefined) {
+    const v = t.value;
+    mudarRec(S.rec, r => {
+      if (!r) return false;
+      if (d.rp !== undefined) { r.passos[+d.rp] = v; return; }
+      if (d.ri) {
+        const i = r.ingredientes[+d.k];
+        if (d.ri === 'qtde') { const n = parseNum(v); if (Number.isNaN(n)) { avisar('Número inválido: "' + v + '". Use, por exemplo, 12,5.'); return false; } i.qtde = n; }
+        else i[d.ri] = v.trim();
+        return;
+      }
+      switch (d.r) {
+        case 'nome': { const n = v.trim(); if (!n) { avisar('A receita precisa de um nome.'); return false; } r.nome = n; break; }
+        case 'rendQ': { const n = parseNum(v); if (Number.isNaN(n)) { avisar('Número inválido: "' + v + '". Use, por exemplo, 2,5.'); return false; } r.rendimento = { ...(r.rendimento || {}), qtde: n }; break; }
+        case 'rendU': r.rendimento = { ...(r.rendimento || {}), unidade: v.trim() }; break;
+        case 'ficha': r.ficha = v || null; if (v && !r.casa) r.casa = S.casa; break;
+        case 'casa': { r.casa = v || null; const cc = S.casas[v]; if (r.ficha && (!cc || !cc.fichas.some(x => norm(x.nome) === norm(r.ficha)))) r.ficha = null; break; }
+        case 'obs': r.obs = v; break;
+        default: r[d.r] = v.trim();
+      }
+    });
+    return;
+  }
+  if (!d.a) return;
+  const v = t.value, k = +d.k;
+  const num = () => { const n = parseNum(v); if (Number.isNaN(n)) { avisar('Número inválido: "' + v + '". Use, por exemplo, 12,50.'); return undefined; } return n; };
+  estado($('status').classList.contains('err') ? '' : $('status').textContent);
+  mudar(c => {
+    const f = d.n !== undefined ? c.fichas.find(x => x.nome === d.n) : fichaAtual(c), can = fichaAtual(c) ? canalAtual(c) : null;
+    switch (d.a) {
+      case 'f-nome': {
+        const n = v.trim();
+        if (!n) { avisar('A ficha precisa de um nome.'); return false; }
+        if (norm(n) !== norm(f.nome) && c.fichas.some(x => norm(x.nome) === norm(n))) { avisar('Já existe uma ficha chamada "' + n + '".'); return false; }
+        for (const i of c.insumos) if (i.origem && norm(i.origem) === norm(f.nome)) i.origem = n;
+        for (const [rid, r] of Object.entries(S.receitas)) if (r.ficha && norm(r.ficha) === norm(f.nome) && casaDaReceita(r) === S.casa) { r.ficha = n; agendarSalvar('receitas/' + rid); }
+        S.hist = S.hist.map(h => h === f.nome ? n : h);
+        f.nome = n; S.ficha = n; break;
+      }
+      case 'f-margem': { const n = num(); if (n === undefined) return false; if (n != null && (n < 0 || n >= 100)) { avisar('A margem precisa ficar entre 0 e menos de 100%.'); return false; } f.margem = n == null ? null : n / 100; break; }
+      case 'f-cat': f.categoria = v; break;
+      case 'f-notas': f.notas = v; break;
+      case 'f-tipo': f.tipo = v || null; break;
+      case 'f-preco': { const n = num(); if (n === undefined) return false; f.preco = n; break; }
+      case 'f-ini': { if (v && f.fim && f.fim < v) { avisar('A data de início vem depois da data final.'); return false; } f.inicio = v || null; break; }
+      case 'f-fim': { if (v && f.inicio && v < f.inicio) { avisar('A data final vem antes da data de início.'); return false; } f.fim = v || null; break; }
+      case 'f-desc': f.descricao = v; break;
+      case 'it-nome': f[can][k].nome = v.trim(); break;
+      case 'it-qtde': { const n = num(); if (n === undefined) return false; f[can][k].qtde = n; break; }
+      case 'f-rend': {
+        const n = num(); if (n === undefined) return false;
+        if (n == null || n <= 0) { avisar('O rendimento precisa ser maior que zero.'); return false; }
+        const g = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome)); if (!g) return false;
+        g.embalagem = n; break;
+      }
+      case 'ins-nome': {
+        const i = c.insumos[k], n = v.trim();
+        if (!n) { avisar('O insumo precisa de um nome.'); return false; }
+        if (norm(n) !== norm(i.nome) && c.insumos.some(x => norm(x.nome) === norm(n))) { avisar('Já existe um insumo chamado "' + n + '".'); return false; }
+        renomearInsumo(c, i.nome, n); if (S.insAberto === i.nome) S.insAberto = n; i.nome = n; break;
+      }
+      case 'ins-grupo': c.insumos[k].grupo = v.trim(); break;
+      case 'ins-un': c.insumos[k].unidade = v.trim(); break;
+      case 'ins-emb': { const n = num(); if (n === undefined) return false; c.insumos[k].embalagem = n; break; }
+      case 'ins-preco': { const n = num(); if (n === undefined) return false; const i = c.insumos[k]; if (i.origem) { i.origem = null; setTimeout(() => estado('Preço salvo. "' + i.nome + '" agora é um insumo comprado, sem receita de origem.'), 800); } i.preco = n; break; }
+      case 'ins-custo': {
+        const n = num(); if (n === undefined) return false; const i = c.insumos[k];
+        const div = (i.embalagem ?? 0) * (1 - (i.fator ?? 0));
+        if (n != null && !div) { avisar('Preencha a embalagem de "' + i.nome + '" antes de digitar o custo unitário.'); return false; }
+        if (i.origem) i.origem = null;
+        i.preco = n == null ? null : Math.round(n * div * 100) / 100; break;
+      }
+      case 'ins-fator': { const n = num(); if (n === undefined) return false; if (n != null && (n < 0 || n >= 100)) { avisar('A redução precisa ficar entre 0 e menos de 100%.'); return false; } c.insumos[k].fator = n == null ? null : n / 100; break; }
+      case 'ins-origem': {
+        const n = v.trim();
+        if (n && !c.fichas.some(x => norm(x.nome) === norm(n))) { avisar('Não existe ficha chamada "' + n + '".'); return false; }
+        c.insumos[k].origem = n ? c.fichas.find(x => norm(x.nome) === norm(n)).nome : null;
+        break;
+      }
+      case 'op-val': { const n = num(); if (n === undefined) return false; c.operacional.linhas[+d.l].valores[+d.m] = n; break; }
+      case 'op-vd': { const n = num(); if (n === undefined) return false; c.operacional.vendas[+d.m] = n; break; }
+    }
+  });
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'busca') { S.busca = e.target.value; $('lista').innerHTML = linhasLista(casa(), calcular(casa())); }
+  if (e.target.id === 'insBusca') { S.insBusca = e.target.value; $('corpoIns').innerHTML = corpoInsumos(casa(), calcular(casa())); }
+  if (e.target.dataset.ef) S.espForm[e.target.dataset.ef] = e.target.value;
+  if (e.target.id === 'pd-texto') S.pd.texto = e.target.value;
+  if (e.target.id === 'recBusca') { S.recBusca = e.target.value; $('listaRec').innerHTML = listaReceitas(); }
+});
+document.addEventListener('keydown', e => { if (e.key !== 'Enter') return; if (e.target.id === 'casa-nome') { e.preventDefault(); criarCasa(); } else if (e.target.id === 'casa-renome') { e.preventDefault(); const b = document.querySelector('[data-casa-renomear]'); if (b) b.click(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.ef && e.target.tagName === 'INPUT') { e.preventDefault(); cadastrarEspecial(); } });
+/* ---------- Arrastar para reordenar ---------- */
+function mover(arr, a, b, after) {
+  if (a < 0 || b < 0) return a;
+  const [x] = arr.splice(a, 1);
+  const t = b - (a < b ? 1 : 0) + (after ? 1 : 0);
+  arr.splice(t, 0, x);
+  return t;
+}
+function soltar(kind, de, para, after) {
+  if (de === para) return de;
+  let novo = de;
+  if (kind === 'ficha') mudar(c => { const a = c.fichas.findIndex(f => f.nome === de), b = c.fichas.findIndex(f => f.nome === para); mover(c.fichas, a, b, after); });
+  else if (kind === 'item') mudar(c => { const f = fichaAtual(c); novo = mover(f[canalAtual(c)], +de, +para, after); });
+  else if (kind === 'ins') mudar(c => { novo = mover(c.insumos, +de, +para, after); });
+  else if (kind === 'ring') mudarRec(S.rec, r => { novo = mover(r.ingredientes, +de, +para, after); });
+  else if (kind === 'rpasso') mudarRec(S.rec, r => { novo = mover(r.passos, +de, +para, after); });
+  else if (kind === 'rec') {
+    const cat = r => r.categoria || 'Sem categoria', alvo = cat(S.receitas[de]);
+    const ids = recOrdenadas().filter(([, r]) => cat(r) === alvo).map(([id]) => id);
+    mudarRecs(ids, () => { mover(ids, ids.indexOf(de), ids.indexOf(para), after); ids.forEach((id, k) => { S.receitas[id].ordem = k; }); });
+  }
+  return String(novo);
+}
+let drag = null;
+function limparMarcas() { document.querySelectorAll('.drop-before, .drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after')); }
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest('.handle'); if (!h || e.button) return;
+  const item = h.closest('[data-dnd-item]'), box = item && item.parentElement;
+  if (!box || !box.dataset.dnd) return;
+  e.preventDefault();
+  drag = { h, box, item, itens: [...box.children].filter(x => x.hasAttribute('data-dnd-item')), y0: e.clientY, sy: scrollY, sc: box.closest('.list'), alvo: null, after: false, moveu: false };
+  drag.sc0 = drag.sc ? drag.sc.scrollTop : 0;
+  try { h.setPointerCapture(e.pointerId); } catch (_) {}
+});
+function posicionar(y) {
+  const d = drag, dy = y - d.y0 + (scrollY - d.sy) + (d.sc ? d.sc.scrollTop - d.sc0 : 0);
+  d.item.style.transform = `translateY(${dy}px)`;
+  let alvo = null, after = false;
+  for (const x of d.itens) {
+    if (x === d.item) continue;
+    const r = x.getBoundingClientRect();
+    if (y < r.top + r.height / 2) { alvo = x; after = false; break; }
+    alvo = x; after = true;
+  }
+  limparMarcas();
+  d.alvo = alvo; d.after = after;
+  if (alvo) alvo.classList.add(after ? 'drop-after' : 'drop-before');
+}
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.moveu) { if (Math.abs(e.clientY - drag.y0) < 4) return; drag.moveu = true; drag.item.classList.add('dragging'); document.body.classList.add('arrastando'); }
+  drag.y = e.clientY;
+  posicionar(e.clientY);
+  clearInterval(drag.auto);
+  const passo = () => {
+    if (!drag) return;
+    let v = 0;
+    if (drag.sc) { const r = drag.sc.getBoundingClientRect(); v = drag.y < r.top + 36 ? -10 : drag.y > r.bottom - 36 ? 10 : 0; if (v) drag.sc.scrollTop += v; }
+    if (!v) { v = drag.y < 70 ? -12 : drag.y > innerHeight - 50 ? 12 : 0; if (v) scrollBy(0, v); }
+    if (v) posicionar(drag.y); else clearInterval(drag.auto);
+  };
+  drag.auto = setInterval(passo, 30);
+});
+function fimDrag(cancelar) {
+  if (!drag) return;
+  const d = drag; drag = null;
+  clearInterval(d.auto); limparMarcas();
+  d.item.classList.remove('dragging'); d.item.style.transform = ''; document.body.classList.remove('arrastando');
+  if (!cancelar && d.moveu && d.alvo) soltar(d.box.dataset.dnd, d.item.dataset.key, d.alvo.dataset.key, d.after);
+}
+document.addEventListener('pointerup', () => fimDrag(false));
+document.addEventListener('pointercancel', () => fimDrag(true));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && drag) { fimDrag(true); return; }
+  const h = e.target.closest && e.target.closest('.handle');
+  if (!h || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  const item = h.closest('[data-dnd-item]'), box = item && item.parentElement; if (!box || !box.dataset.dnd) return;
+  e.preventDefault();
+  const itens = [...box.children].filter(x => x.hasAttribute('data-dnd-item')), k = itens.indexOf(item), viz = itens[e.key === 'ArrowUp' ? k - 1 : k + 1];
+  if (!viz) return;
+  const kind = box.dataset.dnd, novo = soltar(kind, item.dataset.key, viz.dataset.key, e.key === 'ArrowDown');
+  setTimeout(() => { const el = $('h-' + kind + '-' + novo); if (el) el.focus(); }, 20);
+});
+addEventListener('pagehide', () => { for (const id of Object.keys(saver)) if (saver[id].sujo) { clearTimeout(saver[id].t); gravar(id); } });
+
+/* ---------- Início ---------- */
+async function iniciar() {
+  const vazio = msg => { if (!S.carregou) $('view').innerHTML = `<div class="note">${esc(msg)}</div>`; };
+  if (!window.claude || !window.claude.use) { estado(''); vazio('Não consegui carregar o app. Recarregue a página.'); return; }
+  const espera = setTimeout(() => { estado('Sem resposta do servidor ainda.', true); vazio('As fichas ainda não chegaram. Verifique a conexão; a página continua tentando.'); }, 10000);
+  db = await window.claude.use('db');
+  if (!db) { clearTimeout(espera); estado(''); vazio('Entre na sua conta para ver as fichas.'); return; }
+  const quem = await window.claude.use('user');
+  if (quem && !(await quem.isOwner()) && !(await quem.canEdit())) { S.soLeitura = true; S.recModo = 'ler'; document.body.classList.add('leitura'); estado('Somente visualização'); }
+  db.collection('casas').onSnapshot(snap => {
+    if (!snap.metadata.fromCache) { clearTimeout(espera); if ($('status').textContent === 'Sem resposta do servidor ainda.' || $('status').textContent === 'Abrindo…') estado('Tudo salvo'); }
+    let mudou = false;
+    for (const doc of snap.docs) {
+      const s = saver['casas/' + doc.id] || (saver['casas/' + doc.id] = {});
+      if (s.sujo || s.rodando) continue;
+      const corpo = doc.data(), cn = canon(corpo);
+      if (cn === s.ultimo) continue;
+      s.ultimo = cn;
+      S.casas[doc.id] = JSON.parse(JSON.stringify(corpo));
+      mudou = true;
+    }
+    if (!snap.metadata.fromCache) { const vistos = new Set(snap.docs.map(d => d.id)); for (const id of Object.keys(S.casas)) { const s = saver['casas/' + id]; if (!vistos.has(id) && !(s && (s.sujo || s.rodando))) { delete S.casas[id]; if (S.casa === id) S.casa = null; mudou = true; } } }
+    if (snap.docs.length && !S.casa) {
+      const ids = Object.keys(S.casas).sort((a, b) => (S.casas[a].ordem ?? 9) - (S.casas[b].ordem ?? 9));
+      S.casa = ids[0]; S.ficha = casa().fichas[0] && casa().fichas[0].nome; S.carregou = true;
+    }
+    if (mudou) {
+      const foco = document.activeElement && document.activeElement.id;
+      if (!foco || !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) render(); else if (!$('view').querySelector('.layout, .pad')) render();
+    }
+    if (!snap.docs.length && !snap.metadata.fromCache) { estado(''); if (S.soLeitura) vazio('Ainda não há fichas cadastradas.'); else { S.vazioPronto = true; render(); setTimeout(() => { const el = $('casa-nome'); if (el) el.focus(); }, 30); } }
+  }, err => { clearTimeout(espera); estado('Não consegui abrir as fichas (' + (err && err.code || 'erro') + ').', true); vazio('Não consegui abrir as fichas agora. Recarregue a página para tentar de novo.'); });
+  db.collection('receitas').onSnapshot(snap => {
+    let mudou = false;
+    const vistos = new Set();
+    for (const doc of snap.docs) {
+      vistos.add(doc.id);
+      const s = saver['receitas/' + doc.id] || (saver['receitas/' + doc.id] = {});
+      if (s.sujo || s.rodando) continue;
+      const corpo = doc.data(), cn = canon(corpo);
+      if (cn === s.ultimo && S.receitas[doc.id]) continue;
+      s.ultimo = cn;
+      S.receitas[doc.id] = JSON.parse(JSON.stringify(corpo));
+      mudou = true;
+    }
+    if (!snap.metadata.fromCache) for (const id of Object.keys(S.receitas)) {
+      const s = saver['receitas/' + id];
+      if (!vistos.has(id) && !(s && (s.sujo || s.rodando))) { delete S.receitas[id]; mudou = true; }
+    }
+    if (mudou && S.carregou) {
+      const el = document.activeElement;
+      if (!el || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) render();
+    }
+  }, err => { estado('Não consegui abrir as receitas (' + (err && err.code || 'erro') + ').', true); });
+  db.collection('perdas').onSnapshot(snap => {
+    let mudou = false;
+    const vistos = new Set();
+    for (const doc of snap.docs) {
+      vistos.add(doc.id);
+      const s = saver['perdas/' + doc.id] || (saver['perdas/' + doc.id] = {});
+      if (s.sujo || s.rodando) continue;
+      const corpo = doc.data(), cn = canon(corpo);
+      if (cn === s.ultimo && S.perdas[doc.id]) continue;
+      s.ultimo = cn; S.perdas[doc.id] = JSON.parse(JSON.stringify(corpo)); mudou = true;
+    }
+    if (!snap.metadata.fromCache) for (const id of Object.keys(S.perdas)) {
+      const s = saver['perdas/' + id];
+      if (!vistos.has(id) && !(s && (s.sujo || s.rodando))) { delete S.perdas[id]; mudou = true; }
+    }
+    if (mudou && S.carregou) { const el = document.activeElement; if (!el || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) render(); }
+  }, err => { estado('Não consegui abrir as perdas (' + (err && err.code || 'erro') + ').', true); });
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* ---------- Conta, restaurantes e dados (Supabase) ---------- */
+(function () {
+  const SB_URL = 'https://khxhwlbxxmlrkkncncib.supabase.co';
+  const SB_KEY = 'sb_publishable_v2JwEmnEV2bVFgGY3d_i7g_kv-6mgE5';
+  const sb = window.supabase.createClient(SB_URL, SB_KEY);
+  const LS = 'fichas.restaurante';
+  const lsGet = () => { try { return localStorage.getItem(LS); } catch (e) { return null; } };
+  const lsSet = v => { try { v ? localStorage.setItem(LS, v) : localStorage.removeItem(LS); } catch (e) {} };
+  const $e = id => document.getElementById(id);
+  const h = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const PAPEIS = { dono: 'Dono', editor: 'Editor', leitor: 'Só visualiza' };
+  let SESS = null, RID = null, PAPEL = null, NOME = '', ENTRADA = 'login', MSG = '', OCUPADO = false, RECUPERAR = false;
+
+  /* ---- erros em português ---- */
+  function traduz(e) {
+    const m = (e && (e.message || e.error_description || e.msg)) || String(e || '');
+    if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+    if (/already registered|already been registered|User already/i.test(m)) return 'Este e-mail já tem conta. Use “Entrar”.';
+    if (/Password should be at least|weak/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (/valid email|invalid format|Unable to validate email/i.test(m)) return 'Esse e-mail não parece válido.';
+    if (/rate limit|too many/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.';
+    if (/codigo invalido/i.test(m)) return 'Código de convite não encontrado. Confira as letras e números.';
+    if (/precisa de outro dono/i.test(m)) return 'O restaurante precisa de pelo menos um dono. Torne outra pessoa dona antes.';
+    if (/so o dono/i.test(m)) return 'Só o dono do restaurante pode fazer isso.';
+    if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Sem conexão com o servidor. Verifique a internet.';
+    return 'Algo deu errado: ' + m;
+  }
+
+  /* ---- camada de dados no formato que o app espera ---- */
+  const cols = {};
+  let canal = null;
+  const snapDe = col => ({ docs: [...cols[col].map.entries()].map(([id, d]) => ({ id, data: () => d })), metadata: { fromCache: false } });
+  const avisa = col => cols[col].cbs.forEach(f => { try { f(snapDe(col)); } catch (e) { console.error(e); } });
+  async function baixar(col) {
+    let tudo = [], de = 0;
+    for (;;) {
+      const { data, error } = await sb.from('docs').select('doc_id,dados').eq('restaurante_id', RID).eq('colecao', col).range(de, de + 999);
+      if (error) throw error;
+      tudo = tudo.concat(data); if (data.length < 1000) break; de += 1000;
+    }
+    return tudo;
+  }
+  async function recarregar(col) {
+    try {
+      const linhas = await baixar(col), m = new Map();
+      for (const r of linhas) m.set(r.doc_id, r.dados);
+      cols[col].map = m; avisa(col);
+    } catch (e) { cols[col].errs.forEach(f => f({ code: 'unavailable', message: traduz(e) })); }
+  }
+  function abrirCanal() {
+    if (canal) return;
+    let vezes = 0;
+    canal = sb.channel('docs-' + RID)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'docs', filter: 'restaurante_id=eq.' + RID }, p => {
+        const r = p.eventType === 'DELETE' ? p.old : p.new;
+        if (!r || !r.colecao || !cols[r.colecao]) return;
+        if (r.restaurante_id && r.restaurante_id !== RID) return;
+        if (p.eventType === 'DELETE') cols[r.colecao].map.delete(r.doc_id); else cols[r.colecao].map.set(r.doc_id, r.dados);
+        avisa(r.colecao);
+      })
+      .subscribe(st => { if (st === 'SUBSCRIBED' && vezes++ > 0) Object.keys(cols).forEach(recarregar); });
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && RID) Object.keys(cols).forEach(recarregar); });
+  function erroSalvar(error) {
+    const m = (error && error.message) || '';
+    if (/Failed to fetch|NetworkError|network/i.test(m)) return { code: 'unavailable' };
+    if (/row-level security|permission/i.test(m) || error.code === '42501') return { code: 'sem permissão' };
+    return { code: m || 'erro' };
+  }
+  const dbAdapter = {
+    collection: col => ({
+      onSnapshot(cb, err) {
+        const c = cols[col] || (cols[col] = { map: new Map(), cbs: [], errs: [] });
+        c.cbs.push(cb); if (err) c.errs.push(err);
+        abrirCanal(); recarregar(col);
+        return () => { c.cbs = c.cbs.filter(f => f !== cb); };
+      }
+    }),
+    doc: caminho => {
+      const [col, id] = caminho.split('/');
+      return {
+        async set(dados) {
+          const { error } = await sb.from('docs').upsert({ restaurante_id: RID, colecao: col, doc_id: id, dados, atualizado_em: new Date().toISOString() });
+          if (error) throw erroSalvar(error);
+          if (cols[col]) cols[col].map.set(id, dados);
+        },
+        async delete() {
+          const { error } = await sb.from('docs').delete().eq('restaurante_id', RID).eq('colecao', col).eq('doc_id', id);
+          if (error) throw erroSalvar(error);
+          if (cols[col]) cols[col].map.delete(id);
+        }
+      };
+    }
+  };
+  const userAdapter = { isOwner: async () => PAPEL === 'dono', canEdit: async () => PAPEL === 'dono' || PAPEL === 'editor' };
+  window.claude = { use: async n => n === 'db' ? dbAdapter : n === 'user' ? userAdapter : null };
+
+  /* ---- telas de entrada ---- */
+  function mostrarEntrada(sim) { $e('entrada').hidden = !sim; document.querySelector('.wrap').hidden = sim; }
+  function telaEntrada(corpo) {
+    $e('entrada').innerHTML = `<div class="ent-caixa"><div class="ent-marca"><span class="ent-logo" aria-hidden="true">FT</span><div><b>Fichas Técnicas</b><span>Custo, receitas e perdas da sua cozinha</span></div></div>${MSG ? `<p class="ent-msg" role="alert">${h(MSG)}</p>` : ''}${corpo}</div>`;
+    mostrarEntrada(true);
+    const f = $e('entrada').querySelector('input'); if (f) f.focus();
+  }
+  function telaLogin() {
+    if (RECUPERAR) return telaEntrada(`<h2>Nova senha</h2><form class="ent-form" data-form="novasenha">
+      <label class="field">Nova senha<input type="password" name="senha" autocomplete="new-password" minlength="6" required></label>
+      <button class="ghost solid" ${OCUPADO ? 'disabled' : ''}>Salvar senha</button></form>`);
+    if (ENTRADA === 'cadastro') return telaEntrada(`<h2>Criar conta</h2><form class="ent-form" data-form="cadastro">
+      <label class="field">E-mail<input type="email" name="email" autocomplete="email" required></label>
+      <label class="field">Senha (mínimo 6 caracteres)<input type="password" name="senha" autocomplete="new-password" minlength="6" required></label>
+      <button class="ghost solid" ${OCUPADO ? 'disabled' : ''}>Criar conta</button></form>
+      <p class="ent-alt">Já tem conta? <button class="link" data-ent="login">Entrar</button></p>`);
+    if (ENTRADA === 'esqueci') return telaEntrada(`<h2>Esqueci a senha</h2><p class="muted">Mandamos um link para o seu e-mail para criar uma senha nova.</p><form class="ent-form" data-form="esqueci">
+      <label class="field">E-mail<input type="email" name="email" autocomplete="email" required></label>
+      <button class="ghost solid" ${OCUPADO ? 'disabled' : ''}>Enviar link</button></form>
+      <p class="ent-alt"><button class="link" data-ent="login">Voltar para entrar</button></p>`);
+    telaEntrada(`<h2>Entrar</h2><form class="ent-form" data-form="login">
+      <label class="field">E-mail<input type="email" name="email" autocomplete="email" required></label>
+      <label class="field">Senha<input type="password" name="senha" autocomplete="current-password" required></label>
+      <button class="ghost solid" ${OCUPADO ? 'disabled' : ''}>Entrar</button></form>
+      <p class="ent-alt">Primeira vez? <button class="link" data-ent="cadastro">Criar conta</button> · <button class="link" data-ent="esqueci">Esqueci a senha</button></p>`);
+  }
+  async function telaRestaurantes() {
+    const { data, error } = await sb.from('membros').select('papel, restaurantes(id, nome)').eq('user_id', SESS.user.id);
+    if (error) { MSG = traduz(error); }
+    const lista = (data || []).filter(x => x.restaurantes).sort((a, b) => a.restaurantes.nome.localeCompare(b.restaurantes.nome, 'pt-BR'));
+    telaEntrada(`<h2>${lista.length ? 'Seus restaurantes' : 'Bem-vindo!'}</h2>
+      ${lista.length ? `<div class="ent-lista">${lista.map(x => `<button class="ent-rest" data-abrir="${h(x.restaurantes.id)}"><b>${h(x.restaurantes.nome)}</b><span>${h(PAPEIS[x.papel])}</span></button>`).join('')}</div>`
+        : '<p class="muted">Crie o seu restaurante ou entre no de alguém com o código de convite que essa pessoa te passou.</p>'}
+      <form class="ent-form ent-linha" data-form="criar"><label class="field">Criar restaurante<input type="text" name="nome" maxlength="80" placeholder="Nome do restaurante" required></label><button class="ghost solid" ${OCUPADO ? 'disabled' : ''}>Criar</button></form>
+      <form class="ent-form ent-linha" data-form="codigo"><label class="field">Tenho um código de convite<input type="text" name="codigo" maxlength="12" placeholder="Ex.: 7F3A9C21" autocapitalize="characters" required></label><button class="ghost" ${OCUPADO ? 'disabled' : ''}>Entrar</button></form>
+      <p class="ent-alt">Conectado como ${h(SESS.user.email)} · <button class="link" data-sair>Sair</button></p>`);
+  }
+  async function abrirRestaurante(rid) {
+    const { data, error } = await sb.from('membros').select('papel, restaurantes(nome)').eq('user_id', SESS.user.id).eq('restaurante_id', rid).maybeSingle();
+    if (error || !data) { lsSet(null); MSG = error ? traduz(error) : ''; return telaRestaurantes(); }
+    RID = rid; PAPEL = data.papel; NOME = data.restaurantes.nome; lsSet(rid); MSG = '';
+    $e('entrada').innerHTML = ''; mostrarEntrada(false);
+    document.querySelector('header.top h1').textContent = NOME;
+    document.title = NOME + ' · Fichas Técnicas';
+    $e('conta').innerHTML = `<button class="ghost" data-equipe>Equipe</button><button class="ghost" data-trocar>Restaurantes</button><button class="ghost" data-sair>Sair</button>`;
+    iniciar();
+  }
+
+  /* ---- painel da equipe ---- */
+  async function painelEquipe() {
+    const p = $e('equipe'); p.hidden = false;
+    p.innerHTML = '<div class="eq-caixa"><p class="muted">Carregando…</p></div>';
+    const [{ data: gente, error }, cod] = await Promise.all([
+      sb.rpc('equipe', { p_rid: RID }),
+      PAPEL === 'dono' ? sb.rpc('codigo_convite', { p_rid: RID }) : Promise.resolve({ data: null })
+    ]);
+    if (error) { p.innerHTML = `<div class="eq-caixa"><p class="ent-msg">${h(traduz(error))}</p><button class="ghost" data-eq-fechar>Fechar</button></div>`; return; }
+    const dono = PAPEL === 'dono', eu = SESS.user.id;
+    p.innerHTML = `<div class="eq-caixa" role="dialog" aria-modal="true" aria-labelledby="eq-tit">
+      <div class="eq-topo"><h2 id="eq-tit">Equipe de ${h(NOME)}</h2><button class="ghost" data-eq-fechar>Fechar</button></div>
+      ${dono ? `<div class="eq-convite"><p>Para colocar alguém na equipe, mande o endereço e o código. A pessoa cria a conta, clica em “Tenho um código de convite” e entra como <b>Editor</b>. Depois você pode mudar o acesso dela aqui.</p>
+        <div class="eq-cod"><span>Endereço</span><code>${h(location.origin + location.pathname)}</code></div>
+        <div class="eq-cod"><span>Código</span><code id="eq-codigo">${h(cod.data || '')}</code><button class="ghost" data-eq-copiar>Copiar convite</button><button class="ghost" data-eq-novo>Trocar código</button></div>
+        <p class="muted">Trocar o código impede que o antigo seja usado. Quem já entrou continua na equipe.</p>
+        <form class="ent-linha" data-form="renomear"><label class="field">Nome do restaurante<input type="text" name="nome" maxlength="80" value="${h(NOME)}" required></label><button class="ghost">Salvar nome</button></form></div>` : ''}
+      <div class="tbl"><table><thead><tr><th>Pessoa</th><th>Acesso</th><th></th></tr></thead><tbody>
+      ${(gente || []).map(g => `<tr><td>${h(g.email)}${g.user_id === eu ? ' <span class="muted">(você)</span>' : ''}</td>
+        <td>${dono ? `<select data-eq-papel="${h(g.user_id)}" aria-label="Acesso de ${h(g.email)}">${Object.entries(PAPEIS).map(([k, v]) => `<option value="${k}"${k === g.papel ? ' selected' : ''}>${v}</option>`).join('')}</select>` : h(PAPEIS[g.papel])}</td>
+        <td>${dono && g.user_id !== eu ? `<button class="ghost danger" data-eq-tirar="${h(g.user_id)}">Tirar</button>` : g.user_id === eu && !dono ? `<button class="ghost danger" data-eq-tirar="${h(g.user_id)}">Sair do restaurante</button>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="muted"><b>Dono</b>: tudo, inclusive a equipe. <b>Editor</b>: cria e altera fichas, insumos, receitas e perdas. <b>Só visualiza</b>: consulta sem alterar.</p>
+      <p class="ent-msg" id="eq-msg" role="status" hidden></p></div>`;
+  }
+  const eqMsg = t => { const el = $e('eq-msg'); if (el) { el.hidden = !t; el.textContent = t || ''; } };
+
+  /* ---- eventos ---- */
+  document.addEventListener('submit', async e => {
+    const f = e.target.closest('[data-form]'); if (!f) return;
+    e.preventDefault(); if (OCUPADO) return;
+    const v = Object.fromEntries(new FormData(f).entries()), tipo = f.dataset.form;
+    OCUPADO = true; MSG = '';
+    try {
+      if (tipo === 'login') { const { error } = await sb.auth.signInWithPassword({ email: v.email.trim(), password: v.senha }); if (error) throw error; }
+      else if (tipo === 'cadastro') {
+        const { data, error } = await sb.auth.signUp({ email: v.email.trim(), password: v.senha });
+        if (error) throw error;
+        if (!data.session) { const r = await sb.auth.signInWithPassword({ email: v.email.trim(), password: v.senha }); if (r.error) throw r.error; }
+      }
+      else if (tipo === 'esqueci') { const { error } = await sb.auth.resetPasswordForEmail(v.email.trim(), { redirectTo: location.origin + location.pathname }); if (error) throw error; MSG = 'Pronto. Abra o link que chegou no seu e-mail.'; ENTRADA = 'login'; OCUPADO = false; telaLogin(); return; }
+      else if (tipo === 'novasenha') { const { error } = await sb.auth.updateUser({ password: v.senha }); if (error) throw error; RECUPERAR = false; history.replaceState(null, '', location.pathname); OCUPADO = false; await depoisDeEntrar(); return; }
+      else if (tipo === 'criar') { const { data, error } = await sb.rpc('criar_restaurante', { p_nome: v.nome }); if (error) throw error; OCUPADO = false; return abrirRestaurante(data); }
+      else if (tipo === 'codigo') { const { data, error } = await sb.rpc('entrar_com_codigo', { p_codigo: v.codigo }); if (error) throw error; OCUPADO = false; return abrirRestaurante(data); }
+      else if (tipo === 'renomear') { const nome = v.nome.trim(); const { error } = await sb.from('restaurantes').update({ nome }).eq('id', RID); if (error) throw error; NOME = nome; document.querySelector('header.top h1').textContent = nome; document.title = nome + ' · Fichas Técnicas'; eqMsg('Nome salvo.'); OCUPADO = false; return; }
+    } catch (err) {
+      OCUPADO = false;
+      if (tipo === 'renomear') { eqMsg(traduz(err)); return; }
+      MSG = traduz(err); SESS && !RECUPERAR ? telaRestaurantes() : telaLogin(); return;
+    }
+    OCUPADO = false;
+  });
+  document.addEventListener('click', async e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const d = t.dataset;
+    if (d.ent) { e.preventDefault(); ENTRADA = d.ent; MSG = ''; telaLogin(); return; }
+    if (d.abrir) { abrirRestaurante(d.abrir); return; }
+    if (d.sair !== undefined) { await sb.auth.signOut(); lsSet(null); location.reload(); return; }
+    if (d.trocar !== undefined) { lsSet(null); location.reload(); return; }
+    if (d.equipe !== undefined) { painelEquipe(); return; }
+    if (d.eqFechar !== undefined) { $e('equipe').hidden = true; $e('equipe').innerHTML = ''; return; }
+    if (d.eqCopiar !== undefined) {
+      const txt = `Entre em ${location.origin + location.pathname}, crie sua conta e use o código de convite ${$e('eq-codigo').textContent} para entrar em ${NOME}.`;
+      try { await navigator.clipboard.writeText(txt); eqMsg('Convite copiado. Cole no WhatsApp para mandar.'); } catch (err) { eqMsg(txt); }
+      return;
+    }
+    if (d.eqNovo !== undefined) { const { data, error } = await sb.rpc('novo_codigo', { p_rid: RID }); if (error) return eqMsg(traduz(error)); $e('eq-codigo').textContent = data; eqMsg('Código trocado. O antigo não funciona mais.'); return; }
+    if (d.eqTirar) {
+      if (t.dataset.certeza !== '1') { t.dataset.certeza = '1'; t.textContent = 'Confirmar'; return; }
+      const { error } = await sb.rpc('remover_membro', { p_rid: RID, p_user: d.eqTirar });
+      if (error) return eqMsg(traduz(error));
+      if (d.eqTirar === SESS.user.id) { lsSet(null); location.reload(); return; }
+      painelEquipe(); return;
+    }
+  });
+  document.addEventListener('change', async e => {
+    const s = e.target; if (!s.dataset || !s.dataset.eqPapel) return;
+    const { error } = await sb.rpc('mudar_papel', { p_rid: RID, p_user: s.dataset.eqPapel, p_papel: s.value });
+    if (error) { eqMsg(traduz(error)); painelEquipe(); return; }
+    if (s.dataset.eqPapel === SESS.user.id) { location.reload(); return; }
+    eqMsg('Acesso alterado.');
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$e('equipe').hidden) { $e('equipe').hidden = true; $e('equipe').innerHTML = ''; } });
+
+  /* ---- início ---- */
+  async function depoisDeEntrar() {
+    const salvo = lsGet();
+    if (salvo) return abrirRestaurante(salvo);
+    return telaRestaurantes();
+  }
+  let comecou = false;
+  sb.auth.onAuthStateChange((ev, sess) => {
+    SESS = sess;
+    if (ev === 'PASSWORD_RECOVERY') { RECUPERAR = true; telaLogin(); return; }
+    if (ev === 'SIGNED_IN' && !comecou && !RECUPERAR) { comecou = true; setTimeout(depoisDeEntrar, 0); }
+  });
+  (async () => {
+    const { data } = await sb.auth.getSession();
+    SESS = data.session;
+    if (RECUPERAR) return;
+    if (SESS) { if (!comecou) { comecou = true; depoisDeEntrar(); } }
+    else telaLogin();
+  })();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+
+</body></html>
