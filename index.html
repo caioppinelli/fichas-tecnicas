@@ -208,6 +208,13 @@ body.leitura :is(.pd-novo, [data-pd-del], [data-pede-del^="pd:"]) { display: non
 .eq-cod span { width: 72px; color: var(--muted); font-size: 13px; }
 .eq-cod code { font: 600 16px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; word-break: break-all; }
 .eq-caixa select { width: auto; }
+.ent-item { display: flex; gap: 6px; align-items: stretch; }
+.ent-item .ent-rest { flex: 1; min-width: 0; }
+.ent-item > .ghost { flex: none; }
+.ent-conf { border: 1px solid var(--bad); border-radius: 8px; padding: 11px 13px; display: grid; gap: 8px; }
+.ent-conf p { margin: 0; }
+.eq-perigo { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 6px; }
+.eq-perigo .actions span { font-size: 14px; }
 </style>
 
 <div id="entrada" class="entrada" hidden></div>
@@ -1727,7 +1734,7 @@ async function iniciar() {
   const $e = id => document.getElementById(id);
   const h = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const PAPEIS = { dono: 'Dono', editor: 'Editor', leitor: 'Só visualiza' };
-  let SESS = null, RID = null, PAPEL = null, NOME = '', ENTRADA = 'login', MSG = '', OCUPADO = false, RECUPERAR = false;
+  let EXCLUIR = null, SESS = null, RID = null, PAPEL = null, NOME = '', ENTRADA = 'login', MSG = '', OCUPADO = false, RECUPERAR = false;
 
   /* ---- erros em português ---- */
   function traduz(e) {
@@ -1843,8 +1850,14 @@ async function iniciar() {
     const { data, error } = await sb.from('membros').select('papel, restaurantes(id, nome)').eq('user_id', SESS.user.id);
     if (error) { MSG = traduz(error); }
     const lista = (data || []).filter(x => x.restaurantes).sort((a, b) => a.restaurantes.nome.localeCompare(b.restaurantes.nome, 'pt-BR'));
+    const res = {}; try { const r = await sb.rpc('resumo_restaurantes'); for (const x of r.data || []) res[x.restaurante_id] = x; } catch (e) {}
+    const plural = (n, a, b) => n + ' ' + (n === 1 ? a : b);
+    const resumo = id => { const x = res[id]; if (!x) return ''; if (!x.casas && !x.receitas) return 'vazio'; return [plural(x.casas, 'casa', 'casas'), plural(x.fichas, 'ficha', 'fichas'), plural(x.receitas, 'receita', 'receitas')].join(' · '); };
+    const item = x => { const id = x.restaurantes.id, nome = x.restaurantes.nome;
+      if (EXCLUIR === id) return `<div class="ent-conf"><p>Apagar <b>${h(nome)}</b> (${h(resumo(id) || 'sem dados')}) e tudo o que tem dentro? A equipe perde o acesso e não dá para desfazer.</p><div class="actions"><button class="ghost danger" data-excluir-sim="${h(id)}">Apagar de vez</button><button class="ghost" data-excluir-nao>Cancelar</button></div></div>`;
+      return `<div class="ent-item"><button class="ent-rest" data-abrir="${h(id)}"><b>${h(nome)}</b><span>${h(PAPEIS[x.papel])}${resumo(id) ? ' · ' + h(resumo(id)) : ''}</span></button>${x.papel === 'dono' ? `<button class="ghost danger" data-excluir-rest="${h(id)}" aria-label="Excluir ${h(nome)}">Excluir</button>` : ''}</div>`; };
     telaEntrada(`<h2>${lista.length ? 'Seus restaurantes' : 'Bem-vindo!'}</h2>
-      ${lista.length ? `<div class="ent-lista">${lista.map(x => `<button class="ent-rest" data-abrir="${h(x.restaurantes.id)}"><b>${h(x.restaurantes.nome)}</b><span>${h(PAPEIS[x.papel])}</span></button>`).join('')}</div>`
+      ${lista.length ? `<div class="ent-lista">${lista.map(item).join('')}</div>`
         : '<p class="muted">Crie o seu restaurante ou entre no de alguém com o código de convite que essa pessoa te passou.</p>'}
       <form class="ent-form ent-linha" data-form="criar"><label class="field">Criar restaurante<input type="text" name="nome" maxlength="80" placeholder="Nome do restaurante" required></label><button class="ghost solid" ${OCUPADO ? 'disabled' : ''}>Criar</button></form>
       <form class="ent-form ent-linha" data-form="codigo"><label class="field">Tenho um código de convite<input type="text" name="codigo" maxlength="12" placeholder="Ex.: 7F3A9C21" autocapitalize="characters" required></label><button class="ghost" ${OCUPADO ? 'disabled' : ''}>Entrar</button></form>
@@ -1884,6 +1897,7 @@ async function iniciar() {
         <td>${dono && g.user_id !== eu ? `<button class="ghost danger" data-eq-tirar="${h(g.user_id)}">Tirar</button>` : g.user_id === eu && !dono ? `<button class="ghost danger" data-eq-tirar="${h(g.user_id)}">Sair do restaurante</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>
       <p class="muted"><b>Dono</b>: tudo, inclusive a equipe. <b>Editor</b>: cria e altera fichas, insumos, receitas e perdas. <b>Só visualiza</b>: consulta sem alterar.</p>
+      ${dono ? `<div class="eq-perigo"><b>Excluir restaurante</b><p class="muted">Apaga ${h(NOME)} com todas as casas, fichas, receitas e perdas. A equipe perde o acesso. Não dá para desfazer.</p><div class="actions" id="eq-excluir"><button class="ghost danger" data-eq-excluir>Excluir ${h(NOME)}</button></div></div>` : ''}
       <p class="ent-msg" id="eq-msg" role="status" hidden></p></div>`;
   }
   const eqMsg = t => { const el = $e('eq-msg'); if (el) { el.hidden = !t; el.textContent = t || ''; } };
@@ -1927,6 +1941,12 @@ async function iniciar() {
       try { await navigator.clipboard.writeText(txt); eqMsg('Convite copiado. Cole no WhatsApp para mandar.'); } catch (err) { eqMsg(txt); }
       return;
     }
+    if (d.excluirRest) { EXCLUIR = d.excluirRest; telaRestaurantes(); return; }
+    if (d.excluirNao !== undefined) { EXCLUIR = null; telaRestaurantes(); return; }
+    if (d.excluirSim) { const { error } = await sb.rpc('excluir_restaurante', { p_rid: d.excluirSim }); EXCLUIR = null; if (error) MSG = traduz(error); else { MSG = ''; if (lsGet() === d.excluirSim) lsSet(null); } telaRestaurantes(); return; }
+    if (d.eqExcluir !== undefined) { $e('eq-excluir').innerHTML = `<span>Tem certeza? Tudo de ${h(NOME)} será apagado.</span><button class="ghost danger" data-eq-excluir-sim>Sim, apagar de vez</button><button class="ghost" data-eq-excluir-nao>Cancelar</button>`; return; }
+    if (d.eqExcluirNao !== undefined) { $e('eq-excluir').innerHTML = `<button class="ghost danger" data-eq-excluir>Excluir ${h(NOME)}</button>`; return; }
+    if (d.eqExcluirSim !== undefined) { const { error } = await sb.rpc('excluir_restaurante', { p_rid: RID }); if (error) return eqMsg(traduz(error)); lsSet(null); location.reload(); return; }
     if (d.eqNovo !== undefined) { const { data, error } = await sb.rpc('novo_codigo', { p_rid: RID }); if (error) return eqMsg(traduz(error)); $e('eq-codigo').textContent = data; eqMsg('Código trocado. O antigo não funciona mais.'); return; }
     if (d.eqTirar) {
       if (t.dataset.certeza !== '1') { t.dataset.certeza = '1'; t.textContent = 'Confirmar'; return; }
