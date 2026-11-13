@@ -237,7 +237,7 @@ body.leitura :is(.pd-novo, [data-pd-del], [data-pede-del^="pd:"]) { display: non
 <script>
 const CATS = ['Itens de venda', 'Especiais', 'Porções', 'Extras', 'Preparos base'];
 const TIPOS_ESP = ['Lanche', 'Pizza'];
-const UN = { Gramas: 'g', Litros: 'L', Unidade: 'un', Quilos: 'kg', Mililitros: 'ml', ML: 'ml' };
+const UN = { Gramas: 'g', Grama: 'g', Litros: 'L', Litro: 'L', Unidade: 'un', Unidades: 'un', Quilos: 'kg', Quilo: 'kg', Quilogramas: 'kg', Quilograma: 'kg', Miligramas: 'mg', Mililitros: 'ml', Mililitro: 'ml', ML: 'ml' };
 const TIPOS = {
   'Sem preço': 'Insumo cadastrado sem preço. O custo dele não entra na ficha.',
   'Sem quantidade': 'O ingrediente está na ficha, mas sem quantidade, então custa R$ 0,00.',
@@ -749,9 +749,9 @@ function fichaParaRecs(cid) {
   for (const [id, r] of Object.entries(S.receitas)) {
     if (!r.ficha || casaDaReceita(r) !== cid) continue;
     const f = c.fichas.find(x => norm(x.nome) === norm(r.ficha)); if (!f) continue;
-    const antigos = new Map((r.ingredientes || []).map(i => [norm(i.nome), i]));
+    const antigos = new Map(); for (const i of r.ingredientes || []) { const k = norm(i.nome); if (!antigos.has(k)) antigos.set(k, []); antigos.get(k).push(i); }
     const novos = (f.salao || []).filter(i => norm(i.nome)).map(it => {
-      const ins = C.ins.get(norm(it.nome)), un = ins ? (UN[ins.unidade] || ins.unidade || '') : '', old = antigos.get(norm(it.nome));
+      const ins = C.ins.get(norm(it.nome)), un = ins ? (UN[ins.unidade] || ins.unidade || '') : '', fila = antigos.get(norm(it.nome)), old = fila && fila.length ? fila.shift() : null;
       let ru = old && old.unidade ? old.unidade : un, q = converter(it.qtde, un, ru);
       if (q == null) { q = it.qtde; ru = un; }
       return { nome: it.nome, obs: old ? old.obs || '' : '', qtde: q, unidade: ru };
@@ -1505,7 +1505,20 @@ document.addEventListener('change', e => {
         renomearInsumo(c, i.nome, n); if (S.insAberto === i.nome) S.insAberto = n; i.nome = n; break;
       }
       case 'ins-grupo': c.insumos[k].grupo = v.trim(); break;
-      case 'ins-un': c.insumos[k].unidade = v.trim(); break;
+      case 'ins-un': {
+        const i = c.insumos[k], novo = v.trim(); if (novo === i.unidade) return false;
+        const de = UN[i.unidade] || i.unidade || '', para = UN[novo] || novo;
+        const fat = converter(1, de, para);
+        if (de && para && fat != null && fat !== 1) {
+          if (i.embalagem != null) i.embalagem = converter(i.embalagem, de, para);
+          let n = 0;
+          for (const f of c.fichas) for (const can of ['salao', 'delivery']) for (const it of f[can] || []) if (norm(it.nome) === norm(i.nome) && it.qtde != null) { it.qtde = converter(it.qtde, de, para); n++; }
+          setTimeout(() => estado(`Unidade de ${i.nome} trocada de ${de} para ${para}: embalagem e ${n} ${n === 1 ? 'quantidade' : 'quantidades'} nas fichas convertidas. O custo não mudou.`), 800);
+        } else if (de && para && norm(de) !== norm(para) && fat == null && (i.embalagem != null || c.fichas.some(f => ['salao', 'delivery'].some(can => (f[can] || []).some(it => norm(it.nome) === norm(i.nome)))))) {
+          setTimeout(() => estado(`Não dá para converter ${de} em ${para}. Confira a embalagem e as quantidades de ${i.nome} nas fichas.`, true), 800);
+        }
+        i.unidade = novo; break;
+      }
       case 'ins-emb': { const n = num(); if (n === undefined) return false; c.insumos[k].embalagem = n; break; }
       case 'ins-preco': { const n = num(); if (n === undefined) return false; const i = c.insumos[k]; if (i.origem) { i.origem = null; setTimeout(() => estado('Preço salvo. "' + i.nome + '" agora é um insumo comprado, sem receita de origem.'), 800); } i.preco = n; break; }
       case 'ins-custo': {
