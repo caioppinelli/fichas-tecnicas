@@ -1519,7 +1519,14 @@ document.addEventListener('change', e => {
         }
         i.unidade = novo; break;
       }
-      case 'ins-emb': { const n = num(); if (n === undefined) return false; c.insumos[k].embalagem = n; break; }
+      case 'ins-emb': {
+        const n = num(); if (n === undefined) return false; const i = c.insumos[k], velha = i.embalagem;
+        if (!i.origem && i.preco != null && velha > 0 && n > 0 && n !== velha) {
+          i.preco = Math.round(i.preco * n / velha * 1e6) / 1e6;
+          setTimeout(() => estado(`Preço de ${i.nome} ajustado para ${brl(i.preco)} por ${numTxt(n)} ${UN[i.unidade] || i.unidade || ''}. O custo por unidade não mudou.`), 800);
+        }
+        i.embalagem = n; break;
+      }
       case 'ins-preco': { const n = num(); if (n === undefined) return false; const i = c.insumos[k]; if (i.origem) { i.origem = null; setTimeout(() => estado('Preço salvo. "' + i.nome + '" agora é um insumo comprado, sem receita de origem.'), 800); } i.preco = n; break; }
       case 'ins-custo': {
         const n = num(); if (n === undefined) return false; const i = c.insumos[k];
