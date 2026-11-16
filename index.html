@@ -1734,7 +1734,7 @@ async function iniciar() {
   const $e = id => document.getElementById(id);
   const h = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const PAPEIS = { dono: 'Dono', editor: 'Editor', leitor: 'Só visualiza' };
-  let EXCLUIR = null, SESS = null, RID = null, PAPEL = null, NOME = '', ENTRADA = 'login', MSG = '', OCUPADO = false, RECUPERAR = false;
+  let EXCLUIR = null, SESS = null, RID = null, PAPEL = null, NOME = '', ENTRADA = new URLSearchParams(location.search).has('cadastro') ? 'cadastro' : 'login', MSG = '', OCUPADO = false, RECUPERAR = false;
 
   /* ---- erros em português ---- */
   function traduz(e) {
