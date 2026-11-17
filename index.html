@@ -697,6 +697,18 @@ function listaReceitas() {
 /* Custo da receita: pela ficha ligada (na casa da receita) ou, sem ficha, somando os insumos dessa casa. */
 const casaDaReceita = r => r.casa && S.casas[r.casa] ? r.casa : S.casa;
 /* Conversão simples entre g/kg/mg e ml/L, para a receita poder usar outra unidade que o insumo. */
+const UN_OPC = [['Unidade', 'un'], ['Gramas', 'g'], ['Quilos', 'kg'], ['Litros', 'l'], ['Mililitros', 'ml']];
+function unCanon(u) {
+  const a = norm(UN[u] || UN[String(u || '').trim()] || u || '');
+  if (!a) return null;
+  if (['un', 'und', 'unid', 'unidade', 'unidades', 'u'].includes(a)) return 'Unidade';
+  const o = UN_OPC.find(([nome, ab]) => ab === a || norm(nome) === a);
+  return o ? o[0] : null;
+}
+function seletorUnidade(i, k) {
+  const atual = unCanon(i.unidade), extra = !atual && i.unidade ? `<option selected>${esc(i.unidade)}</option>` : '', vazio = !atual && !i.unidade ? '<option value="" selected>—</option>' : '';
+  return `<select id="ins-${k}-u" aria-label="Unidade" data-a="ins-un" data-k="${k}">${vazio}${extra}${UN_OPC.map(([nome]) => `<option${nome === atual ? ' selected' : ''}>${nome}</option>`).join('')}</select>`;
+}
 const FAT_UN = { g: ['m', 1], kg: ['m', 1000], mg: ['m', 0.001], ml: ['v', 1], l: ['v', 1000] };
 function converter(q, de, para) {
   if (q == null) return null;
@@ -892,7 +904,7 @@ function corpoInsumos(c, C) {
       <td class="w-n"><input type="text" id="ins-${k}-n" aria-label="Nome do insumo" data-a="ins-nome" data-k="${k}" value="${esc(i.nome)}"></td>
       <td class="w-s"><input type="text" id="ins-${k}-g" list="dl-grupos" aria-label="Grupo" data-a="ins-grupo" data-k="${k}" value="${esc(i.grupo)}"></td>
       <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-e" aria-label="Embalagem" data-a="ins-emb" data-k="${k}" value="${esc(numTxt(i.embalagem))}"></td>
-      <td class="w-u"><input type="text" id="ins-${k}-u" list="dl-unidades" aria-label="Unidade" data-a="ins-un" data-k="${k}" value="${esc(i.unidade)}"></td>
+      <td class="w-u">${seletorUnidade(i, k)}</td>
       <td class="w-p"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-p" aria-label="Preço" data-a="ins-preco" data-k="${k}" value="${esc(i.origem ? nf(2).format(C.preco(i) ?? 0) : numTxt(i.preco))}"${i.origem ? ' title="Vem da receita de origem. Digitar um preço aqui desliga a receita de origem."' : ''}>${sem ? '<span class="tag warn">sem preço</span>' : ''}</td>
       <td class="w-q"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-f" aria-label="Fator de redução em %" data-a="ins-fator" data-k="${k}" value="${esc(pctTxt(i.fator))}"></td>
       <td class="w-p"><input class="nb" type="text" inputmode="decimal" id="ins-${k}-c" aria-label="Custo unitário de ${esc(i.nome)}" title="Digite o custo por ${esc(UN[i.unidade] || i.unidade || 'unidade')}; o preço da embalagem é recalculado." data-a="ins-custo" data-k="${k}" value="${esc(C.unit(i.nome) == null ? '' : (Math.abs(C.unit(i.nome)) < 1 ? nf(4) : nf(2)).format(C.unit(i.nome)))}" placeholder="—"></td>
@@ -1513,7 +1525,7 @@ document.addEventListener('change', e => {
       }
       case 'ins-grupo': c.insumos[k].grupo = v.trim(); break;
       case 'ins-un': {
-        const i = c.insumos[k], novo = v.trim(); if (novo === i.unidade) return false;
+        const i = c.insumos[k], novo = v.trim(); if (novo === i.unidade || (novo && unCanon(i.unidade) === novo && norm(UN[novo] || novo) === norm(UN[i.unidade] || i.unidade))) { if (novo !== i.unidade) { i.unidade = novo; break; } return false; }
         const de = UN[i.unidade] || i.unidade || '', para = UN[novo] || novo;
         const fat = converter(1, de, para);
         if (de && para && fat != null && fat !== 1) {
