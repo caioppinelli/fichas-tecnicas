@@ -140,11 +140,17 @@ h3 { font: 600 15px var(--display); margin: 8px 0 0; }
 .obs { background: var(--warn-soft); color: var(--fg); border-radius: 6px; padding: 9px 12px; white-space: pre-wrap; max-width: 75ch; margin: 0; }
 .escala { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .escala input { width: 64px; }
-body.leitura :is(.handle, [data-mover], [data-add-item], [data-nova-ficha], [data-novo-ins], [data-rec-nova], [data-rec-add-ing], [data-rec-add-passo], [data-rec-puxar], [data-pede-del], [data-dup], [data-rec-dup], [data-criar-del], [data-rm], [data-rec-rm-ing], [data-rec-rm-passo], [data-esp-mover], #desfazer, [data-rec-modo], .esp > section:first-child) { display: none !important; }
+body.leitura :is(.handle, [data-mover], [data-add-item], [data-add-rec], [data-nova-ficha], [data-novo-ins], [data-rec-nova], [data-rec-add-ing], [data-rec-add-passo], [data-rec-puxar], [data-pede-del], [data-dup], [data-rec-dup], [data-criar-del], [data-rm], [data-rec-rm-ing], [data-rec-rm-passo], [data-esp-mover], #desfazer, [data-rec-modo], .esp > section:first-child) { display: none !important; }
 .mover { background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 12px; }
 .mv-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 .mv-head b { font: 600 16px var(--display); }
 .mv-sec { display: grid; gap: 5px; }
+.addrec { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: end; }
+.addrec .field { flex: 1 1 220px; }
+.addrec .ar-q { flex: 0 1 170px; }
+.addrec .ar-q div { display: flex; gap: 6px; align-items: center; }
+.addrec .ar-q input { width: 100%; }
+.addrec p { flex-basis: 100%; margin: 0; }
 .mv-sec > span { font: 600 12px var(--display); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
 .conf { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--warn-soft); color: var(--fg); border-radius: 6px; padding: 8px 10px; font-size: 13.5px; }
 .aviso { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; background: var(--accent-soft); color: var(--fg); border-radius: 6px; padding: 8px 12px; margin: 0 0 12px; font-size: 14px; }
@@ -523,6 +529,74 @@ function blocoEspecial(f, tot) {
 function confLinha(acao, alvo, texto) {
   return S.moverConf === acao + '|' + alvo ? `<div class="conf">${texto}<button class="ghost solid" data-mv="${acao}" data-alvo="${esc(alvo)}">Sim, mover</button><button class="ghost" data-mv-cancel>Cancelar</button></div>` : '';
 }
+function unRotulo(ab) {
+  const a = norm(ab);
+  if (!a || ['un', 'und', 'unidade', 'unidades'].includes(a)) return 'Unidade';
+  const o = UN_OPC.find(([nome, x]) => x === a || norm(nome) === a);
+  return o ? o[0] : ab;
+}
+function basesParaFicha(c, f) {
+  const out = [], vistos = new Set();
+  for (const i of c.insumos) {
+    if (!i.origem || norm(i.origem) === norm(f.nome)) continue;
+    vistos.add(norm(i.origem));
+    out.push({ chave: 'ins:' + i.nome, rotulo: i.nome.replace(/^\*\s*/, ''), un: UN[i.unidade] || i.unidade || 'un' });
+  }
+  for (const [id, r] of Object.entries(S.receitas)) {
+    const aqui = r.ficha && casaDaReceita(r) === S.casa && c.fichas.some(x => norm(x.nome) === norm(r.ficha));
+    if (aqui && (vistos.has(norm(r.ficha)) || norm(r.ficha) === norm(f.nome))) continue;
+    const ru = r.rendimento && r.rendimento.qtde > 0 ? r.rendimento.unidade : '';
+    out.push({ chave: 'rec:' + id, rotulo: r.nome + ' (aba Receitas)', un: UN[unRotulo(ru)] || ru || 'un' });
+  }
+  return out.sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+}
+function painelAddRec(c, f) {
+  const bases = basesParaFicha(c, f);
+  if (!bases.length) return `<div class="mover" role="region" aria-label="Adicionar receita"><div class="mv-head"><b>Adicionar receita</b><button class="ghost" data-add-rec-fechar>Fechar</button></div><p class="muted">Ainda não há receitas nem preparos nesta casa. Cadastre na aba Receitas ou crie uma ficha em Preparos base.</p></div>`;
+  return `<div class="mover" role="region" aria-label="Adicionar receita">
+    <div class="mv-head"><b>Adicionar receita a “${esc(f.nome)}”</b><button class="ghost" data-add-rec-fechar>Fechar</button></div>
+    <div class="addrec">
+      <label class="field">Receita ou preparo<select id="ar-base"><option value="">Escolha…</option>${bases.map(b => `<option value="${esc(b.chave)}" data-un="${esc(b.un)}">${esc(b.rotulo)}</option>`).join('')}</select></label>
+      <label class="field ar-q">Quanto vai<div><input type="text" inputmode="decimal" id="ar-qtde" placeholder="ex.: 1 ou 250"><span id="ar-un" class="muted">un</span></div></label>
+      <button class="ghost solid" data-add-rec-ok>Adicionar à ficha</button>
+      <p class="muted">A receita entra como uma linha desta ficha, com o custo dela. Se o custo da receita mudar, esta ficha acompanha. Depois é só adicionar os outros ingredientes.</p>
+    </div></div>`;
+}
+function adicionarReceitaNaFicha(chave, q) {
+  let nomeIns = chave.startsWith('ins:') ? chave.slice(4) : null, ligar = null, criouFicha = null, semRend = false;
+  const rid = chave.startsWith('rec:') ? chave.slice(4) : null, r = rid ? S.receitas[rid] : null;
+  if (rid && !r) { avisar('Essa receita não existe mais.'); return; }
+  mudar(c => {
+    const f = fichaAtual(c), can = canalAtual(c);
+    if (r) {
+      let fp = r.ficha && casaDaReceita(r) === S.casa ? c.fichas.find(x => norm(x.nome) === norm(r.ficha)) : null;
+      if (!fp) {
+        const C = calcular(c), nomeF = nomeLivre(c.fichas, r.nome);
+        const salao = (r.ingredientes || []).filter(i => norm(i.nome)).map(i => {
+          const ins = C.ins.get(norm(i.nome)), un = ins ? (UN[ins.unidade] || ins.unidade || '') : '';
+          const x = converter(i.qtde, i.unidade, un); return { nome: i.nome, qtde: x == null ? i.qtde : x };
+        });
+        fp = { nome: nomeF, categoria: 'Preparos base', margem: null, notas: r.obs || '', salao, delivery: null };
+        c.fichas.push(fp); criouFicha = nomeF;
+        if (!r.ficha) ligar = nomeF;
+      }
+      let g = c.insumos.find(i => i.origem && norm(i.origem) === norm(fp.nome));
+      const base = '*' + r.nome.replace(/^RECEITA\s*-\s*/i, '').trim();
+      if (!g) { g = c.insumos.find(i => !i.origem && norm(i.nome) === norm(base)); if (g) { g.origem = fp.nome; const ru = r.rendimento && r.rendimento.qtde > 0 ? r.rendimento : null; if (ru) { g.embalagem = ru.qtde; g.unidade = unRotulo(ru.unidade); } } }
+      if (!g) {
+        const ru = r.rendimento && r.rendimento.qtde > 0 ? r.rendimento : null; semRend = !ru;
+        g = { nome: nomeLivre(c.insumos, base), grupo: 'Sub-receitas', embalagem: ru ? ru.qtde : 1, unidade: ru ? unRotulo(ru.unidade) : 'Unidade', preco: null, fator: null, origem: fp.nome };
+        c.insumos.push(g);
+      }
+      nomeIns = g.nome;
+    }
+    f[can].push({ nome: nomeIns, qtde: q });
+  });
+  if (ligar) mudarRec(rid, x => { x.ficha = ligar; x.casa = S.casa; });
+  S.addRec = false;
+  S.aviso = `“${esc(nomeIns.replace(/^\*\s*/, ''))}” entrou na ficha.${criouFicha ? ` A ficha de custo “${esc(criouFicha)}” também foi criada em Preparos base. <button class="link" data-abrir="${esc(criouFicha)}">Abrir</button>` : ''}${semRend ? ' A receita não tinha rendimento, então 1 unidade = a receita inteira. Ajuste o rendimento na ficha do preparo se precisar.' : ''}`;
+  render();
+}
 function painelMoverFicha(c, f) {
   const outras = Object.keys(S.casas).filter(id => id !== S.casa);
   const gerado = c.insumos.find(i => i.origem && norm(i.origem) === norm(f.nome));
@@ -603,7 +677,8 @@ function renderDetalhe(c, C) {
     <div class="tbl"><table><thead><tr><th class="hcol"></th><th>Ingrediente</th><th class="num">Qtde</th><th>Un.</th><th class="num">Custo</th><th class="col-bar">% da ficha</th><th></th><th></th></tr></thead>
       <tbody data-dnd="item">${linhas || '<tr><td colspan="8" class="muted">Sem ingredientes ainda.</td></tr>'}</tbody>
       <tfoot><tr><td colspan="4">Total</td><td class="num">${brl(tot)}</td><td colspan="3"></td></tr></tfoot></table></div>
-    <div class="actions"><button class="ghost solid" id="add-item" data-add-item>Adicionar ingrediente</button></div>
+    <div class="actions"><button class="ghost solid" id="add-item" data-add-item>Adicionar ingrediente</button><button class="ghost" data-add-rec aria-expanded="${!!S.addRec}">Adicionar receita</button></div>
+    ${S.addRec ? painelAddRec(c, f) : ''}
     <label class="field">Anotações<textarea id="f-notas" data-a="f-notas" rows="2">${esc(f.notas)}</textarea></label>
     ${gerado ? `<p class="muted">Esta receita gera o insumo <b>${esc(gerado.nome)}</b>${usadoEm.length ? `, usado em ${usadoEm.length} ${usadoEm.length === 1 ? 'ficha' : 'fichas'}: ${usadoEm.map(n => `<button class="link" data-abrir="${esc(n)}">${esc(n)}</button>`).join(', ')}` : ''}.</p>` : ''}
     <div class="actions">
@@ -1316,6 +1391,15 @@ document.addEventListener('click', e => {
   if (d.casaExcluir !== undefined) { if (!S.casaExcluir) { S.casaExcluir = true; render(); return; } excluirCasa(); return; }
   if (d.casa) { S.casaForm = null; S.casaExcluir = false; }
   if (d.ficha !== undefined || d.rec !== undefined || d.view || d.casa || t.id === 'desfazer') { S.mover = false; S.moverConf = null; }
+  if (d.ficha !== undefined || d.view || d.casa || d.abrir !== undefined) S.addRec = false;
+  if (d.addRec !== undefined) { S.addRec = !S.addRec; render(); if (S.addRec) setTimeout(() => { const el = $('ar-base'); if (el) el.focus(); }, 10); return; }
+  if (d.addRecFechar !== undefined) { S.addRec = false; render(); return; }
+  if (d.addRecOk !== undefined) {
+    const sel = $('ar-base'), q = parseNum((($('ar-qtde') || {}).value || ''));
+    if (!sel || !sel.value) { avisar('Escolha a receita ou o preparo.'); return; }
+    if (q == null || Number.isNaN(q) || q <= 0) { avisar('Diga quanto vai da receita, por exemplo 1 ou 250.'); return; }
+    adicionarReceitaNaFicha(sel.value, q); return;
+  }
   if (d.mover !== undefined) { S.mover = !S.mover; S.moverConf = null; render(); return; }
   if (d.moverFechar !== undefined) { S.mover = false; S.moverConf = null; render(); return; }
   if (d.mvCancel !== undefined) { S.moverConf = null; render(); return; }
@@ -1443,6 +1527,7 @@ const canalAtual = c => S.canal === 'delivery' && fichaAtual(c).delivery && temC
 function renomearInsumo(c, antes, novo) { for (const f of c.fichas) for (const can of ['salao', 'delivery']) for (const it of f[can] || []) if (norm(it.nome) === norm(antes)) it.nome = novo; }
 document.addEventListener('change', e => {
   const t = e.target, d = t.dataset;
+  if (t.id === 'ar-base') { const o = t.selectedOptions[0]; if ($('ar-un')) $('ar-un').textContent = (o && o.dataset.un) || 'un'; return; }
   if (t.id === 'ordem') { S.ordem = t.value; $('lista').innerHTML = linhasLista(casa(), calcular(casa())); return; }
   if (t.id === 'rec-escala') { const n = parseNum(t.value); if (n == null) return; if (Number.isNaN(n) || n <= 0) { avisar('Use um número maior que zero, por exemplo 1,5.'); return; } S.recEscala = n; render(); return; }
   if (d.pv) {
