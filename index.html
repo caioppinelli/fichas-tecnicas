@@ -107,6 +107,7 @@ tfoot td { font-weight: 700; border-bottom: 0; border-top: 2px solid var(--line)
 .tag { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 0 6px; white-space: nowrap; }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
 .tag.info { background: var(--info-soft); color: var(--info); }
+.tag.ok { background: var(--accent-soft); color: var(--accent); }
 .tag.base { background: var(--accent-soft); color: var(--accent); }
 .tag.off { background: var(--soft); color: var(--muted); }
 .link { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; text-align: left; overflow-wrap: anywhere; }
@@ -145,6 +146,20 @@ body.leitura :is(.handle, [data-mover], [data-add-item], [data-add-rec], [data-n
 .mv-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 .mv-head b { font: 600 16px var(--display); }
 .mv-sec { display: grid; gap: 5px; }
+.imp { display: grid; gap: 14px; max-width: 980px; }
+.imp-sec { padding: 16px 18px; display: grid; gap: 10px; }
+.imp-sec h2, .imp-sec h3 { margin: 0; }
+.imp-sec p { margin: 0; }
+.imp-tipos { justify-self: start; }
+.imp-arq { position: relative; cursor: pointer; }
+.imp-arq input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.imp-topo { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; justify-content: space-between; }
+.imp-map, .imp-opc { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 12px; align-items: end; }
+.imp-previa { max-height: 460px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.imp-previa table { margin: 0; }
+.imp-grupo { padding: 8px 12px; border-bottom: 1px solid var(--soft); }
+.imp-grupo ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
+.chk { display: flex; gap: 8px; align-items: center; grid-column: 1 / -1; }
 .addrec { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: end; }
 .addrec .field { flex: 1 1 220px; }
 .addrec .ar-q { flex: 0 1 170px; }
@@ -491,6 +506,7 @@ function renderHeader(A) {
   const tabs = [['fichas', 'Fichas', c ? c.fichas.length : 0], ['multiplicar', 'Multiplicar', null], ['especiais', 'Especiais', c ? c.fichas.filter(f => f.categoria === 'Especiais').length : 0], ['receitas', 'Receitas', Object.keys(S.receitas).length], ['insumos', 'Insumos', c ? c.insumos.length : 0]];
   if (temDel) tabs.push(['delivery', 'Salão × Delivery', null]);
   tabs.push(['alertas', 'A revisar', rev]);
+  if (!S.soLeitura) tabs.push(['importar', 'Importar', null]);
   $('tabs').innerHTML = tabs.map(([v, n, q]) => `<button class="tab" role="tab" aria-selected="${S.view === v}" data-view="${v}">${n}${q != null ? `<span class="n">${q}</span>` : ''}</button>`).join('');
   $('desfazer').disabled = !(S.undo[S.view === 'receitas' ? 'rec' : S.casa] || []).length;
 }
@@ -596,6 +612,206 @@ function adicionarReceitaNaFicha(chave, q) {
   S.addRec = false;
   S.aviso = `“${esc(nomeIns.replace(/^\*\s*/, ''))}” entrou na ficha.${criouFicha ? ` A ficha de custo “${esc(criouFicha)}” também foi criada em Preparos base. <button class="link" data-abrir="${esc(criouFicha)}">Abrir</button>` : ''}${semRend ? ' A receita não tinha rendimento, então 1 unidade = a receita inteira. Ajuste o rendimento na ficha do preparo se precisar.' : ''}`;
   render();
+}
+/* ---------- Importar planilha (Excel, CSV, ODS) ---------- */
+const impChave = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+const IMP_TIPOS = { insumos: 'Preços de insumos', fichas: 'Fichas técnicas', receitas: 'Receitas' };
+const IMP_CAMPOS = {
+  insumos: [['nome', 'Insumo', true, ['insumo', 'produto', 'descricao', 'descricao do produto', 'item', 'nome', 'material', 'mercadoria']], ['preco', 'Preço da embalagem', true, ['preco', 'valor', 'valor unitario', 'preco unitario', 'vl unit', 'valor unit', 'custo', 'preco embalagem']], ['embalagem', 'Embalagem (quantidade)', false, ['embalagem', 'qtd embalagem', 'quantidade embalagem', 'conteudo', 'peso', 'volume', 'tamanho', 'quantidade', 'qtde', 'qtd']], ['unidade', 'Unidade', false, ['unidade', 'un', 'und', 'unid', 'medida', 'unidade de medida']], ['grupo', 'Grupo', false, ['grupo', 'categoria', 'tipo', 'setor']]],
+  fichas: [['ficha', 'Ficha (nome do prato)', false, ['ficha', 'prato', 'nome da ficha', 'lanche', 'pizza', 'produto final', 'item de venda', 'item do cardapio']], ['ingrediente', 'Ingrediente', true, ['ingrediente', 'insumo', 'materia prima', 'componente', 'item', 'produto', 'descricao']], ['qtde', 'Quantidade', true, ['quantidade', 'qtde', 'qtd', 'quant', 'peso', 'gramatura', 'porcao']], ['unidade', 'Unidade', false, ['unidade', 'un', 'und', 'unid', 'medida']]],
+  receitas: [['receita', 'Receita (nome)', false, ['receita', 'preparo', 'nome da receita', 'ficha']], ['ingrediente', 'Ingrediente', true, ['ingrediente', 'insumo', 'materia prima', 'componente', 'item', 'produto', 'descricao']], ['qtde', 'Quantidade', true, ['quantidade', 'qtde', 'qtd', 'quant', 'peso']], ['unidade', 'Unidade', false, ['unidade', 'un', 'und', 'unid', 'medida']]]
+};
+const IMP_MODELO = {
+  insumos: [['Insumo', 'Preço', 'Embalagem', 'Unidade', 'Grupo'], ['Farinha de trigo', '89,90', '25', 'kg', 'Ingredientes'], ['Leite integral', '5,49', '1', 'L', 'Ingredientes'], ['Ovo', '24,00', '30', 'un', 'Ingredientes']],
+  fichas: [['Ficha', 'Ingrediente', 'Quantidade', 'Unidade'], ['Burger da casa', 'Pão brioche', '1', 'un'], ['Burger da casa', 'Blend bovino', '160', 'g'], ['Burger da casa', 'Queijo cheddar', '40', 'g'], ['Pizza margherita', 'Massa de pizza', '1', 'un'], ['Pizza margherita', 'Mussarela', '200', 'g']],
+  receitas: [['Receita', 'Ingrediente', 'Quantidade', 'Unidade'], ['Molho de tomate', 'Tomate pelado', '2,5', 'kg'], ['Molho de tomate', 'Azeite', '100', 'ml'], ['Molho de tomate', 'Sal', '20', 'g']]
+};
+function carregarXlsx() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((ok, falha) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = () => ok(window.XLSX); s.onerror = () => falha(new Error('Não deu para carregar o leitor de planilhas. Confira a internet e tente de novo.')); document.head.appendChild(s); });
+}
+function impNum(v) {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const t = String(v ?? '').trim(); if (!t) return null;
+  const m = t.replace(/R\$\s*/i, '').match(/-?[\d.,]+/); if (!m) return null;
+  const n = parseNum(m[0]); return Number.isNaN(n) ? null : n;
+}
+function impUnTxt(v) { const m = String(v ?? '').match(/[a-zA-ZÀ-ú]+\.?$/); return m ? m[0].replace('.', '') : ''; }
+function impUnidade(txt) {
+  const a = impChave(txt); if (!a) return '';
+  const mapa = { g: 'Gramas', gr: 'Gramas', grs: 'Gramas', grama: 'Gramas', gramas: 'Gramas', kg: 'Quilos', kgs: 'Quilos', quilo: 'Quilos', quilos: 'Quilos', l: 'Litros', lt: 'Litros', lts: 'Litros', litro: 'Litros', litros: 'Litros', ml: 'Mililitros', mililitro: 'Mililitros', mililitros: 'Mililitros', un: 'Unidade', und: 'Unidade', unid: 'Unidade', unidade: 'Unidade', unidades: 'Unidade', u: 'Unidade', pc: 'Unidade', pct: 'Unidade', cx: 'Unidade', dz: 'Unidade' };
+  return mapa[a] || String(txt).trim();
+}
+const impAb = rot => UN[rot] || rot || '';
+function impCabecalho(linhas, tipo) {
+  const sins = IMP_CAMPOS[tipo].flatMap(x => x[3]);
+  for (let i = 0; i < Math.min(linhas.length, 15); i++) { const hits = linhas[i].filter(c => typeof c === 'string' && sins.includes(impChave(c))).length; if (hits >= 2) return i; }
+  const i = linhas.findIndex(l => l.some(c => String(c ?? '').trim())); return i < 0 ? 0 : i;
+}
+function impMapear(cab, tipo) {
+  const m = {}, usadas = new Set();
+  for (const [campo, , , sins] of IMP_CAMPOS[tipo]) {
+    for (const s of sins) { const k = cab.findIndex((c, j) => !usadas.has(j) && impChave(c) === s); if (k >= 0) { m[campo] = k; usadas.add(k); break; } }
+    if (m[campo] == null) for (const s of sins) { const k = cab.findIndex((c, j) => !usadas.has(j) && impChave(c).split(' ').includes(s)); if (k >= 0) { m[campo] = k; usadas.add(k); break; } }
+  }
+  return m;
+}
+function impPrepararAba() {
+  const I = S.imp, linhas = I.abas[I.aba] || [];
+  I.cabIdx = impCabecalho(linhas, I.tipo);
+  I.cab = (linhas[I.cabIdx] || []).map((c, j) => String(c ?? '').trim() || 'Coluna ' + (j + 1));
+  I.map = impMapear(I.cab, I.tipo);
+}
+async function impLerArquivo(file) {
+  try {
+    estado('Lendo ' + file.name + '…');
+    const X = await carregarXlsx();
+    const texto = /\.(csv|txt)$/i.test(file.name);
+    const wb = X.read(await file.arrayBuffer(), { type: 'array', raw: texto, codepage: 65001 });
+    const abas = {};
+    for (const n of wb.SheetNames) { const l = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: '', raw: true }); if (l.some(r => r.some(c => String(c).trim()))) abas[n] = l; }
+    if (!Object.keys(abas).length) { avisar('A planilha está vazia.'); return; }
+    Object.assign(S.imp, { arquivo: file.name, abas, aba: Object.keys(abas)[0] });
+    impPrepararAba(); estado(''); render();
+  } catch (e) { avisar('Não consegui ler esse arquivo. Use Excel (.xlsx, .xls), CSV ou ODS. ' + (e.message || '')); }
+}
+function impLinhas() {
+  const I = S.imp, linhas = (I.abas[I.aba] || []).slice(I.cabIdx + 1), m = I.map;
+  const pega = (r, c) => m[c] == null ? '' : r[m[c]];
+  return linhas.filter(r => r.some(c => String(c ?? '').trim())).map(r => Object.fromEntries(IMP_CAMPOS[I.tipo].map(([c]) => [c, pega(r, c)])));
+}
+function impInsumoDe(c, nome) {
+  const a = impChave(nome); if (!a) return null;
+  return c.insumos.find(i => impChave(i.nome) === a) || c.insumos.find(i => impChave(i.nome.replace(/^\*\s*/, '')) === a) || null;
+}
+function impPlano(c) {
+  const I = S.imp, rows = impLinhas();
+  if (I.tipo === 'insumos') {
+    return rows.map(r => {
+      const nome = String(r.nome ?? '').trim(), preco = impNum(r.preco);
+      let emb = impNum(r.embalagem), un = impUnidade(r.unidade) || impUnidade(impUnTxt(r.embalagem));
+      const ex = impInsumoDe(c, nome);
+      let st = !nome ? 'pula' : preco == null ? 'semPreco' : ex ? (ex.origem ? 'preparo' : 'atualiza') : 'novo', embFinal = null;
+      if (st === 'atualiza' && emb != null && emb > 0) {
+        if (!un || impAb(un) === impAb(ex.unidade)) embFinal = emb;
+        else { const conv = converter(emb, impAb(un), impAb(ex.unidade)); if (conv != null) embFinal = conv; else st = 'unDif'; }
+      }
+      return { nome, preco, emb, un, embFinal, grupo: String(r.grupo ?? '').trim(), ex, st };
+    }).filter(x => x.st !== 'pula');
+  }
+  const chave = I.tipo === 'fichas' ? 'ficha' : 'receita', grupos = new Map();
+  let atual = '';
+  for (const r of rows) {
+    const n = String(r[chave] ?? '').trim(); if (n) atual = n;
+    const nome = atual || I.aba || 'Importada';
+    const ing = String(r.ingrediente ?? '').trim(); if (!ing) continue;
+    if (!grupos.has(nome)) grupos.set(nome, []);
+    const q = impNum(r.qtde), unTxt = impUnidade(r.unidade) || impUnidade(impUnTxt(r.qtde)), ins = impInsumoDe(c, ing);
+    let qtde = q, nomeIng = ins ? ins.nome : ing, unFinal = unTxt;
+    if (ins && q != null && unTxt) { const conv = converter(q, impAb(unTxt), impAb(ins.unidade)); if (conv != null) { qtde = conv; unFinal = ins.unidade; } }
+    if (ins && !unTxt) unFinal = ins.unidade;
+    grupos.get(nome).push({ nome: nomeIng, qtde, un: unFinal, achou: !!ins });
+  }
+  return [...grupos].map(([nome, itens]) => {
+    const existe = I.tipo === 'fichas' ? c.fichas.some(f => impChave(f.nome) === impChave(nome)) : Object.values(S.receitas).some(r => impChave(r.nome) === impChave(nome));
+    return { nome, itens, existe, fora: itens.filter(i => !i.achou).length };
+  });
+}
+function renderImportar(c) {
+  const I = S.imp || (S.imp = { tipo: 'insumos', novos: true, existe: 'copia', categoria: 'Itens de venda' });
+  const tipos = Object.entries(IMP_TIPOS).map(([k, n]) => `<button data-imp-tipo="${k}" aria-pressed="${I.tipo === k}">${n}</button>`).join('');
+  const ajuda = { insumos: 'Uma linha por insumo, com o nome e o preço da embalagem. Embalagem e unidade são opcionais: sem elas, só o preço muda. Serve para tabela de fornecedor ou lista de compras exportada.', fichas: 'Uma linha por ingrediente, com o nome da ficha, o ingrediente e a quantidade. Se a planilha tiver uma ficha só, a coluna Ficha pode faltar: o nome vem da aba.', receitas: 'Uma linha por ingrediente, com o nome da receita, o ingrediente, a quantidade e a unidade. As receitas entram na aba Receitas, ligadas a esta casa.' }[I.tipo];
+  let corpo = '';
+  if (I.abas) {
+    const plano = impPlano(c), campos = IMP_CAMPOS[I.tipo];
+    const opCol = campo => `<option value="">— não tem —</option>` + I.cab.map((h, j) => `<option value="${j}"${I.map[campo] === j ? ' selected' : ''}>${esc(h)}</option>`).join('');
+    const faltam = campos.filter(([k, , obrig]) => obrig && I.map[k] == null).map(x => x[1]);
+    const abas = Object.keys(I.abas);
+    let previa = '', resumo = '', opcoes = '';
+    if (I.tipo === 'insumos') {
+      const cont = k => plano.filter(x => x.st === k).length;
+      const ST = { atualiza: ['info', 'atualiza'], novo: ['ok', 'novo'], semPreco: ['warn', 'sem preço, fica de fora'], preparo: ['warn', 'é preparo da casa, fica de fora'], unDif: ['warn', 'unidade diferente da cadastrada, fica de fora'] };
+      resumo = `<b>${cont('atualiza')}</b> ${cont('atualiza') === 1 ? 'insumo vai ter o preço atualizado' : 'insumos vão ter o preço atualizado'} · <b>${cont('novo')}</b> ${cont('novo') === 1 ? 'novo' : 'novos'}${cont('semPreco') + cont('preparo') + cont('unDif') ? ` · ${cont('semPreco') + cont('preparo') + cont('unDif')} de fora` : ''}`;
+      opcoes = `<label class="chk"><input type="checkbox" id="imp-novos"${I.novos ? ' checked' : ''}> Cadastrar os insumos que ainda não existem</label>`;
+      previa = `<table><thead><tr><th>Insumo</th><th class="num">Preço</th><th class="num">Embalagem</th><th>Unidade</th><th>O que acontece</th></tr></thead><tbody>${plano.slice(0, 300).map(x => `<tr><td>${esc(x.nome)}${x.ex && x.ex.nome !== x.nome ? ` <span class="muted">→ ${esc(x.ex.nome)}</span>` : ''}</td><td class="num">${brl(x.preco)}${x.st === 'atualiza' && x.ex.preco != null ? `<div class="muted">antes ${brl(x.ex.preco)}</div>` : ''}</td><td class="num">${x.st === 'atualiza' ? esc(numTxt(x.embFinal ?? x.ex.embalagem) || '') : x.st === 'unDif' ? `${esc(numTxt(x.emb))} ${esc(impAb(x.un))}<div class="muted">cadastrado em ${esc(impAb(x.ex.unidade))}</div>` : esc(numTxt(x.emb) || '')}</td><td>${esc(x.st === 'atualiza' || x.st === 'unDif' ? x.ex.unidade || '' : x.un || '')}</td><td><span class="tag ${ST[x.st][0]}">${x.st === 'novo' && !I.novos ? 'novo, não vai entrar' : ST[x.st][1]}</span></td></tr>`).join('')}</tbody></table>`;
+    } else {
+      const ex = plano.filter(x => x.existe).length, fora = plano.reduce((s, x) => s + x.fora, 0);
+      const nomeTipo = I.tipo === 'fichas' ? ['ficha', 'fichas'] : ['receita', 'receitas'];
+      resumo = `<b>${plano.length}</b> ${plano.length === 1 ? nomeTipo[0] : nomeTipo[1]} com <b>${plano.reduce((s, x) => s + x.itens.length, 0)}</b> ingredientes${ex ? ` · ${ex} já ${ex === 1 ? 'existe' : 'existem'}` : ''}${fora ? ` · ${fora} ${fora === 1 ? 'ingrediente não está' : 'ingredientes não estão'} nos insumos de ${esc(c.nome)}` : ''}`;
+      opcoes = (I.tipo === 'fichas' ? `<label class="field">Categoria das fichas novas<select id="imp-cat">${CATS.map(k => `<option${k === I.categoria ? ' selected' : ''}>${esc(k)}</option>`).join('')}</select></label>` : '') +
+        (ex ? `<label class="field">Quando já existir uma ${nomeTipo[0]} com o mesmo nome<select id="imp-existe"><option value="copia"${I.existe === 'copia' ? ' selected' : ''}>Criar outra com o nome “2”</option><option value="substitui"${I.existe === 'substitui' ? ' selected' : ''}>Trocar os ingredientes da que já existe</option><option value="pula"${I.existe === 'pula' ? ' selected' : ''}>Deixar a que já existe como está</option></select></label>` : '');
+      previa = plano.slice(0, 60).map(x => `<div class="imp-grupo"><b>${esc(x.nome)}</b>${x.existe ? ' <span class="tag info">já existe</span>' : ' <span class="tag ok">nova</span>'}<ul>${x.itens.map(i => `<li>${esc(i.nome)} · ${esc(numTxt(i.qtde) || '—')} ${esc(UN[i.un] || i.un || '')}${i.achou ? '' : ' <span class="tag warn">fora dos insumos</span>'}</li>`).join('')}</ul></div>`).join('');
+    }
+    corpo = `<div class="panel imp-sec">
+        <div class="imp-topo"><b>${esc(I.arquivo)}</b>${abas.length > 1 ? `<label class="field">Aba da planilha<select id="imp-aba">${abas.map(a => `<option${a === I.aba ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select></label>` : ''}<button class="ghost" data-imp-limpar>Trocar arquivo</button></div>
+        <h3>Colunas</h3><p class="muted">Confira se cada informação está ligada à coluna certa da planilha.</p>
+        <div class="imp-map">${campos.map(([k, rot, obrig]) => `<label class="field">${esc(rot)}${obrig ? ' *' : ''}<select id="imp-map-${k}">${opCol(k)}</select></label>`).join('')}</div>
+        ${faltam.length ? `<p class="status err">Falta escolher a coluna de: ${faltam.map(esc).join(', ')}.</p>` : `
+        <h3>Prévia</h3><p>${resumo}</p><div class="imp-opc">${opcoes}</div>
+        <div class="tbl imp-previa">${previa || '<p class="muted">Nenhuma linha com dados.</p>'}</div>
+        <div class="actions"><button class="ghost solid" data-imp-ok${plano.length ? '' : ' disabled'}>Importar para ${esc(c.nome)}</button><button class="ghost" data-imp-limpar>Cancelar</button></div>`}
+      </div>`;
+  }
+  return `<div class="imp">
+    <div class="panel imp-sec">
+      <h2>Importar planilha</h2>
+      <p class="muted">Traga dados de uma planilha Excel (.xlsx, .xls), CSV ou ODS para <b>${esc(c.nome)}</b>. Antes de gravar, você confere tudo numa prévia.</p>
+      <div class="seg imp-tipos" role="group" aria-label="O que importar">${tipos}</div>
+      <p>${ajuda}</p>
+      <div class="actions">${I.abas ? '' : '<label class="ghost solid imp-arq">Escolher planilha<input type="file" id="imp-arq" accept=".xlsx,.xls,.xlsm,.csv,.ods,.txt"></label>'}<button class="link" data-imp-modelo>Baixar planilha modelo</button></div>
+    </div>
+    ${corpo}
+  </div>`;
+}
+function impBaixarModelo() {
+  const t = S.imp.tipo, csv = '﻿' + IMP_MODELO[t].map(l => l.map(c => /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'modelo-' + t + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+function impAplicar() {
+  const I = S.imp, c0 = casa(), plano = impPlano(c0);
+  if (I.tipo === 'insumos') {
+    let at = 0, nv = 0;
+    mudar(c => {
+      for (const x of plano) {
+        if (x.st === 'atualiza') {
+          const i = c.insumos.find(y => y.nome === x.ex.nome); if (!i) continue;
+          i.preco = x.preco; if (x.embFinal != null) i.embalagem = x.embFinal; at++;
+        } else if (x.st === 'novo' && I.novos) {
+          if (c.insumos.some(y => impChave(y.nome) === impChave(x.nome))) continue;
+          c.insumos.push({ nome: x.nome, grupo: x.grupo || 'Ingredientes', embalagem: x.emb != null && x.emb > 0 ? x.emb : 1, unidade: x.un || 'Unidade', preco: x.preco, fator: null, origem: null }); nv++;
+        }
+      }
+    });
+    S.aviso = `Importação concluída em ${esc(c0.nome)}: ${at} ${at === 1 ? 'preço atualizado' : 'preços atualizados'}${nv ? ` e ${nv} ${nv === 1 ? 'insumo novo' : 'insumos novos'}` : ''}. Todas as fichas que usam esses insumos já mostram o custo novo. <button class="link" data-view="insumos">Ver insumos</button>`;
+  } else if (I.tipo === 'fichas') {
+    let n = 0, primeira = null;
+    mudar(c => {
+      const temDel = c.fichas.some(f => f.delivery);
+      for (const x of plano) {
+        const itens = x.itens.map(i => ({ nome: i.nome, qtde: i.qtde }));
+        const f = c.fichas.find(y => impChave(y.nome) === impChave(x.nome));
+        if (f && I.existe === 'pula') continue;
+        if (f && I.existe === 'substitui') { f.salao = itens; if (f.delivery) f.delivery = JSON.parse(JSON.stringify(itens)); n++; primeira = primeira || f.nome; continue; }
+        const nome = nomeLivre(c.fichas, x.nome);
+        c.fichas.push({ nome, categoria: I.categoria, margem: null, notas: 'Importada de ' + I.arquivo, salao: itens, delivery: temDel ? JSON.parse(JSON.stringify(itens)) : null }); n++; primeira = primeira || nome;
+      }
+    });
+    S.aviso = `${n} ${n === 1 ? 'ficha importada' : 'fichas importadas'} em ${esc(c0.nome)}.${primeira ? ` <button class="link" data-abrir="${esc(primeira)}">Abrir ${esc(primeira)}</button>` : ''}`;
+  } else {
+    const ids = [], novos = [];
+    for (const x of plano) {
+      const ing = x.itens.map(i => ({ nome: i.nome, qtde: i.qtde, unidade: UN[i.un] || i.un || '', obs: '' }));
+      const ex = Object.entries(S.receitas).find(([, r]) => impChave(r.nome) === impChave(x.nome));
+      if (ex && I.existe === 'pula') continue;
+      if (ex && I.existe === 'substitui') { ids.push(ex[0]); novos.push([ex[0], r => { r.ingredientes = ing; }]); continue; }
+      const id = novoId() + ids.length; ids.push(id);
+      novos.push([id, () => { S.receitas[id] = { nome: nomeLivre(Object.values(S.receitas), x.nome), categoria: '', rendimento: { qtde: null, unidade: '' }, tempo: '', validade: '', armazenamento: '', ingredientes: ing, passos: [''], obs: 'Importada de ' + I.arquivo, ficha: null, casa: S.casa, criado: hoje() }; }]);
+    }
+    if (ids.length) mudarRecs(ids, () => { for (const [id, fn] of novos) fn(S.receitas[id]); }, true);
+    S.aviso = `${ids.length} ${ids.length === 1 ? 'receita importada' : 'receitas importadas'}. <button class="link" data-view="receitas">Ver na aba Receitas</button>`;
+  }
+  S.imp = { tipo: I.tipo, novos: I.novos, existe: I.existe, categoria: I.categoria };
+  render(); scrollTo(0, 0);
 }
 function painelMoverFicha(c, f) {
   const outras = Object.keys(S.casas).filter(id => id !== S.casa);
@@ -1299,7 +1515,7 @@ function render() {
   $('dl-pd').innerHTML = [...new Set(Object.values(S.casas).flatMap(x => [...x.insumos.map(i => i.nome), ...x.fichas.map(f => f.nome)]))].map(n => `<option value="${esc(n)}">`).join('');
   $('dl-pdresp').innerHTML = [...new Set(Object.values(S.perdas).map(p => p.resp).filter(Boolean))].map(n => `<option value="${esc(n)}">`).join('');
   const lista = $('lista') || $('listaRec'), topo = lista ? lista.scrollTop : 0;
-  $('view').innerHTML = (S.aviso ? `<p class="aviso" role="status">${S.aviso}</p>` : '') + (S.modoPerdas ? renderPerdas() : S.view === 'insumos' ? renderInsumos(c, C) : S.view === 'receitas' ? renderReceitas(c, C) : S.view === 'especiais' ? renderEspeciais(c, C) : S.view === 'delivery' ? renderDelivery(c, C) : S.view === 'alertas' ? renderAlertas(A) : S.view === 'multiplicar' ? renderMultiplicar(c, C) : renderFichas(c, C));
+  $('view').innerHTML = (S.aviso ? `<p class="aviso" role="status">${S.aviso}</p>` : '') + (S.modoPerdas ? renderPerdas() : S.view === 'insumos' ? renderInsumos(c, C) : S.view === 'receitas' ? renderReceitas(c, C) : S.view === 'especiais' ? renderEspeciais(c, C) : S.view === 'delivery' ? renderDelivery(c, C) : S.view === 'alertas' ? renderAlertas(A) : S.view === 'multiplicar' ? renderMultiplicar(c, C) : S.view === 'importar' && !S.soLeitura ? renderImportar(c) : renderFichas(c, C));
   const nova = $('lista') || $('listaRec'); if (nova) nova.scrollTop = topo;
   if (S.soLeitura) $('view').querySelectorAll('input:not([type="search"]):not(#rec-escala), select:not(#ordem), textarea').forEach(el => { el.disabled = true; });
 }
@@ -1394,6 +1610,10 @@ document.addEventListener('click', e => {
   if (d.ficha !== undefined || d.view || d.casa || d.abrir !== undefined) S.addRec = false;
   if (d.addRec !== undefined) { S.addRec = !S.addRec; render(); if (S.addRec) setTimeout(() => { const el = $('ar-base'); if (el) el.focus(); }, 10); return; }
   if (d.addRecFechar !== undefined) { S.addRec = false; render(); return; }
+  if (d.impTipo) { const I = S.imp; I.tipo = d.impTipo; if (I.abas) impPrepararAba(); render(); return; }
+  if (d.impModelo !== undefined) { impBaixarModelo(); return; }
+  if (d.impLimpar !== undefined) { const I = S.imp; S.imp = { tipo: I.tipo, novos: I.novos, existe: I.existe, categoria: I.categoria }; render(); return; }
+  if (d.impOk !== undefined) { impAplicar(); return; }
   if (d.addRecOk !== undefined) {
     const sel = $('ar-base'), q = parseNum((($('ar-qtde') || {}).value || ''));
     if (!sel || !sel.value) { avisar('Escolha a receita ou o preparo.'); return; }
@@ -1527,6 +1747,16 @@ const canalAtual = c => S.canal === 'delivery' && fichaAtual(c).delivery && temC
 function renomearInsumo(c, antes, novo) { for (const f of c.fichas) for (const can of ['salao', 'delivery']) for (const it of f[can] || []) if (norm(it.nome) === norm(antes)) it.nome = novo; }
 document.addEventListener('change', e => {
   const t = e.target, d = t.dataset;
+  if (t.id === 'imp-arq') { if (t.files && t.files[0]) impLerArquivo(t.files[0]); return; }
+  if (t.id && t.id.startsWith('imp-') && S.imp) {
+    const I = S.imp;
+    if (t.id === 'imp-aba') { I.aba = t.value; impPrepararAba(); }
+    else if (t.id.startsWith('imp-map-')) { const k = t.id.slice(8); if (t.value === '') delete I.map[k]; else I.map[k] = +t.value; }
+    else if (t.id === 'imp-novos') I.novos = t.checked;
+    else if (t.id === 'imp-cat') I.categoria = t.value;
+    else if (t.id === 'imp-existe') I.existe = t.value;
+    render(); return;
+  }
   if (t.id === 'ar-base') { const o = t.selectedOptions[0]; if ($('ar-un')) $('ar-un').textContent = (o && o.dataset.un) || 'un'; return; }
   if (t.id === 'ordem') { S.ordem = t.value; $('lista').innerHTML = linhasLista(casa(), calcular(casa())); return; }
   if (t.id === 'rec-escala') { const n = parseNum(t.value); if (n == null) return; if (Number.isNaN(n) || n <= 0) { avisar('Use um número maior que zero, por exemplo 1,5.'); return; } S.recEscala = n; render(); return; }
