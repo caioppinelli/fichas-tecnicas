@@ -320,6 +320,14 @@ const $ = id => document.getElementById(id);
 const casa = () => S.casas[S.casa];
 
 /* ---------- Cálculo: mesma regra da planilha ---------- */
+/* Itens de outra casa: a linha guarda casa: '<id>' e o custo vem do cálculo daquela casa. */
+let calcExt = null, calcProf = 0;
+function casaExterna(it, c) { return it && it.casa && S.casas[it.casa] && S.casas[it.casa] !== c ? it.casa : null; }
+function calcDe(id) {
+  if (!calcExt) { calcExt = new Map(); setTimeout(() => { calcExt = null; }, 0); }
+  if (!calcExt.has(id)) { calcProf++; try { calcExt.set(id, calcProf > 4 ? null : calcular(S.casas[id])); } finally { calcProf--; } }
+  return calcExt.get(id);
+}
 function calcular(c) {
   const ins = new Map(), fic = new Map();
   for (const i of c.insumos) if (!ins.has(norm(i.nome))) ins.set(norm(i.nome), i);
@@ -329,7 +337,7 @@ function calcular(c) {
     const k = canal + '|' + norm(f.nome);
     if (memoT.has(k)) return memoT.get(k);
     let t = 0;
-    for (const it of f[canal] || []) { const u = unit(it.nome); if (it.qtde != null && u != null) t += it.qtde * u; }
+    for (const it of f[canal] || []) { const u = unitDe(it); if (it.qtde != null && u != null) t += it.qtde * u; }
     memoT.set(k, t);
     return t;
   }
@@ -350,22 +358,32 @@ function calcular(c) {
     memoU.set(k, u);
     return u;
   }
+  function unitDe(it) {
+    const ext = casaExterna(it, c);
+    if (!ext) return unit(it.nome);
+    const X = calcDe(ext); return X ? X.unit(it.nome) : null;
+  }
+  function insDe(it) {
+    const ext = casaExterna(it, c);
+    if (!ext) return ins.get(norm(it.nome));
+    const X = calcDe(ext); return X ? X.ins.get(norm(it.nome)) : undefined;
+  }
   function situacao(it) {
     if (!norm(it.nome)) return 'Sem ingrediente';
-    if (!ins.has(norm(it.nome))) return 'Fora do cadastro';
+    if (!insDe(it)) return 'Fora do cadastro';
     if (it.qtde == null) return 'Sem quantidade';
-    const u = unit(it.nome);
+    const u = unitDe(it);
     if (u == null) return 'Sem preço';
     return it.qtde * u === 0 ? 'Custo zero' : '';
   }
-  const custo = it => { const u = unit(it.nome); return it.qtde == null || u == null ? 0 : it.qtde * u; };
+  const custo = it => { const u = unitDe(it); return it.qtde == null || u == null ? 0 : it.qtde * u; };
   const usos = new Map();
   for (const f of c.fichas) for (const can of ['salao', 'delivery']) for (const it of f[can] || []) {
     const k = norm(it.nome); if (!k) continue;
     if (!usos.has(k)) usos.set(k, new Set());
     usos.get(k).add(f.nome);
   }
-  return { ins, fic, total, preco, unit, situacao, custo, usos };
+  return { ins, fic, total, preco, unit, unitDe, insDe, situacao, custo, usos };
 }
 function alertas(c, C) {
   const out = [];
@@ -564,7 +582,14 @@ function basesParaFicha(c, f) {
     const ru = r.rendimento && r.rendimento.qtde > 0 ? r.rendimento.unidade : '';
     out.push({ chave: 'rec:' + id, rotulo: r.nome + ' (aba Receitas)', un: UN[unRotulo(ru)] || ru || 'un' });
   }
-  return out.sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  out.sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  for (const [id, cx] of Object.entries(S.casas)) {
+    if (cx === c) continue;
+    const lista = cx.insumos.filter(i => i.origem).map(i => ({ chave: 'ext:' + id + ':' + i.nome, rotulo: i.nome.replace(/^\*\s*/, '') + ' (' + cx.nome + ')', un: UN[i.unidade] || i.unidade || 'un', grupo: cx.nome }));
+    lista.sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+    out.push(...lista);
+  }
+  return out;
 }
 function painelAddRec(c, f) {
   const bases = basesParaFicha(c, f);
@@ -572,14 +597,15 @@ function painelAddRec(c, f) {
   return `<div class="mover" role="region" aria-label="Adicionar receita">
     <div class="mv-head"><b>Adicionar receita a “${esc(f.nome)}”</b><button class="ghost" data-add-rec-fechar>Fechar</button></div>
     <div class="addrec">
-      <label class="field">Receita ou preparo<select id="ar-base"><option value="">Escolha…</option>${bases.map(b => `<option value="${esc(b.chave)}" data-un="${esc(b.un)}">${esc(b.rotulo)}</option>`).join('')}</select></label>
+      <label class="field">Receita ou preparo<select id="ar-base"><option value="">Escolha…</option>${(() => { const grupos = [['', bases.filter(b => !b.grupo)]]; for (const b of bases) if (b.grupo) { let g = grupos.find(x => x[0] === b.grupo); if (!g) grupos.push(g = [b.grupo, []]); g[1].push(b); } return grupos.filter(g => g[1].length).map(([nome, l]) => { const ops = l.map(b => `<option value="${esc(b.chave)}" data-un="${esc(b.un)}">${esc(b.rotulo)}</option>`).join(''); return nome ? `<optgroup label="Preparos de ${esc(nome)}">${ops}</optgroup>` : `<optgroup label="Desta casa">${ops}</optgroup>`; }).join(''); })()}</select></label>
       <label class="field ar-q">Quanto vai<div><input type="text" inputmode="decimal" id="ar-qtde" placeholder="ex.: 1 ou 250"><span id="ar-un" class="muted">un</span></div></label>
       <button class="ghost solid" data-add-rec-ok>Adicionar à ficha</button>
-      <p class="muted">A receita entra como uma linha desta ficha, com o custo dela. Se o custo da receita mudar, esta ficha acompanha. Depois é só adicionar os outros ingredientes.</p>
+      <p class="muted">A receita entra como uma linha desta ficha, com o custo dela. Dá para usar preparos de outras casas também (por exemplo, a massa da SOPRO num especial do AMS). Se o custo da receita mudar, esta ficha acompanha.</p>
     </div></div>`;
 }
 function adicionarReceitaNaFicha(chave, q) {
-  let nomeIns = chave.startsWith('ins:') ? chave.slice(4) : null, ligar = null, criouFicha = null, semRend = false;
+  let nomeIns = chave.startsWith('ins:') ? chave.slice(4) : null, ligar = null, criouFicha = null, semRend = false, casaExt = null;
+  if (chave.startsWith('ext:')) { const resto = chave.slice(4), i = resto.indexOf(':'); casaExt = resto.slice(0, i); nomeIns = resto.slice(i + 1); }
   const rid = chave.startsWith('rec:') ? chave.slice(4) : null, r = rid ? S.receitas[rid] : null;
   if (rid && !r) { avisar('Essa receita não existe mais.'); return; }
   mudar(c => {
@@ -606,11 +632,11 @@ function adicionarReceitaNaFicha(chave, q) {
       }
       nomeIns = g.nome;
     }
-    f[can].push({ nome: nomeIns, qtde: q });
+    f[can].push(casaExt ? { nome: nomeIns, qtde: q, casa: casaExt } : { nome: nomeIns, qtde: q });
   });
   if (ligar) mudarRec(rid, x => { x.ficha = ligar; x.casa = S.casa; });
   S.addRec = false;
-  S.aviso = `“${esc(nomeIns.replace(/^\*\s*/, ''))}” entrou na ficha.${criouFicha ? ` A ficha de custo “${esc(criouFicha)}” também foi criada em Preparos base. <button class="link" data-abrir="${esc(criouFicha)}">Abrir</button>` : ''}${semRend ? ' A receita não tinha rendimento, então 1 unidade = a receita inteira. Ajuste o rendimento na ficha do preparo se precisar.' : ''}`;
+  S.aviso = `“${esc(nomeIns.replace(/^\*\s*/, ''))}”${casaExt ? ' (de ' + esc(S.casas[casaExt].nome) + ')' : ''} entrou na ficha.${casaExt ? ' O custo vem da ficha de lá e acompanha as mudanças.' : ''}${criouFicha ? ` A ficha de custo “${esc(criouFicha)}” também foi criada em Preparos base. <button class="link" data-abrir="${esc(criouFicha)}">Abrir</button>` : ''}${semRend ? ' A receita não tinha rendimento, então 1 unidade = a receita inteira. Ajuste o rendimento na ficha do preparo se precisar.' : ''}`;
   render();
 }
 /* ---------- Importar planilha (Excel, CSV, ODS) ---------- */
@@ -853,8 +879,9 @@ function renderDetalhe(c, C) {
   const nomesOutro = new Map((outro || []).map(i => [norm(i.nome), i]));
   const linhas = itens.map((it, k) => {
     const s = C.situacao(it);
-    const alvo = norm(it.nome) && C.ins.get(norm(it.nome));
-    const abre = alvo && alvo.origem && C.fic.get(norm(alvo.origem));
+    const ext = casaExterna(it, c), alvo = norm(it.nome) && C.insDe(it);
+    const abre = !ext && alvo && alvo.origem && C.fic.get(norm(alvo.origem));
+    const abreExt = ext && alvo && alvo.origem ? alvo.origem : null;
     const un = alvo ? (UN[alvo.unidade] || alvo.unidade || '') : '';
     const cu = C.custo(it);
     const dif = canal === 'delivery' ? (nomesOutro.has(norm(it.nome)) ? (nomesOutro.get(norm(it.nome)).qtde !== it.qtde ? `<span class="tag info">no salão: ${esc(numTxt(nomesOutro.get(norm(it.nome)).qtde) || '—')}</span>` : '') : '<span class="tag info">só no delivery</span>') : '';
@@ -865,7 +892,7 @@ function renderDetalhe(c, C) {
       <td>${esc(un)}</td>
       <td class="num">${brl(cu)}</td>
       <td class="col-bar"><div class="barw"><i style="width:${Math.round(cu / max * 60)}px"></i>${tot ? nf(0, 1).format(cu / tot * 100) : '0'}%</div></td>
-      <td class="w-sit">${abre ? `<button class="link" data-abrir="${esc(abre.nome)}">abrir preparo</button> ` : ''}${s ? `<span class="tag warn">${esc(s)}</span> ` : ''}${dif}</td>
+      <td class="w-sit">${ext ? `<span class="tag info">da ${esc(S.casas[ext].nome)}</span> ` : ''}${abre ? `<button class="link" data-abrir="${esc(abre.nome)}">abrir preparo</button> ` : ''}${abreExt ? `<button class="link" data-ir-casa="${esc(ext)}" data-ir-ficha="${esc(abreExt)}">abrir preparo</button> ` : ''}${s ? `<span class="tag warn">${esc(s)}</span> ` : ''}${dif}</td>
       <td><button class="ghost" aria-label="Remover ${esc(it.nome || 'linha')}" data-rm="${k}">×</button></td></tr>`;
   }).join('');
   const sug = canal === 'salao' && f.margem != null && f.margem < 1 ? tot / (1 - f.margem) : null;
@@ -1824,7 +1851,7 @@ document.addEventListener('change', e => {
       case 'f-ini': { if (v && f.fim && f.fim < v) { avisar('A data de início vem depois da data final.'); return false; } f.inicio = v || null; break; }
       case 'f-fim': { if (v && f.inicio && v < f.inicio) { avisar('A data final vem antes da data de início.'); return false; } f.fim = v || null; break; }
       case 'f-desc': f.descricao = v; break;
-      case 'it-nome': f[can][k].nome = v.trim(); break;
+      case 'it-nome': { const it = f[can][k]; if (it.casa && norm(it.nome) !== norm(v)) delete it.casa; it.nome = v.trim(); break; }
       case 'it-qtde': { const n = num(); if (n === undefined) return false; f[can][k].qtde = n; break; }
       case 'f-rend': {
         const n = num(); if (n === undefined) return false;
