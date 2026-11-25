@@ -585,7 +585,7 @@ function basesParaFicha(c, f) {
   out.sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
   for (const [id, cx] of Object.entries(S.casas)) {
     if (cx === c) continue;
-    const lista = cx.insumos.filter(i => i.origem).map(i => ({ chave: 'ext:' + id + ':' + i.nome, rotulo: i.nome.replace(/^\*\s*/, '') + ' (' + cx.nome + ')', un: UN[i.unidade] || i.unidade || 'un', grupo: cx.nome }));
+    const lista = cx.insumos.filter(i => i.origem || /^\*/.test(i.nome) || norm(i.grupo) === 'sub-receitas').map(i => ({ chave: 'ext:' + id + ':' + i.nome, rotulo: i.nome.replace(/^\*\s*/, '') + ' (' + cx.nome + ')', un: UN[i.unidade] || i.unidade || 'un', grupo: cx.nome }));
     lista.sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
     out.push(...lista);
   }
